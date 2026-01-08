@@ -1,0 +1,167 @@
+export const industries = [
+  {
+    slug: "saas",
+    title: "SaaS Landing Page Optimization",
+    benefits: [
+      "Clarify value prop quickly",
+      "Improve trial conversion",
+      "Build trust with security badges",
+      "Reduce friction in signup flow",
+      "Highlight key differentiators vs competitors",
+    ],
+  },
+  {
+    slug: "ecommerce",
+    title: "Ecommerce Hero Section Analysis",
+    benefits: [
+      "Highlight best sellers",
+      "Increase add-to-cart clicks",
+      "Show shipping guarantees",
+      "Display trust badges prominently",
+      "Optimize for mobile shoppers",
+    ],
+  },
+  {
+    slug: "agencies",
+    title: "Agency Audit Workflow",
+    benefits: [
+      "Generate reports in minutes",
+      "Shareable links for clients",
+      "Consistent scoring rubric",
+      "Impress prospects with professional audits",
+      "Standardize your review process",
+    ],
+  },
+  {
+    slug: "fintech",
+    title: "Fintech Landing Page Best Practices",
+    benefits: [
+      "Build trust with compliance badges",
+      "Explain complex products simply",
+      "Highlight security features",
+      "Show regulatory certifications",
+      "Reduce signup anxiety",
+    ],
+  },
+  {
+    slug: "healthtech",
+    title: "Healthtech Conversion Optimization",
+    benefits: [
+      "HIPAA compliance signals",
+      "Clear privacy communication",
+      "Patient-friendly language",
+      "Insurance information visibility",
+      "Trust-building testimonials",
+    ],
+  },
+  {
+    slug: "edtech",
+    title: "Edtech Landing Page Strategies",
+    benefits: [
+      "Show learning outcomes clearly",
+      "Display student success stories",
+      "Free trial visibility",
+      "Course preview access",
+      "Instructor credibility highlights",
+    ],
+  },
+  {
+    slug: "real-estate",
+    title: "Real Estate Listing Optimization",
+    benefits: [
+      "High-quality image placement",
+      "Virtual tour access",
+      "Pricing transparency",
+      "Agent contact optimization",
+      "Neighborhood information display",
+    ],
+  },
+  {
+    slug: "travel",
+    title: "Travel & Hospitality Landing Pages",
+    benefits: [
+      "Inspiring visual hierarchy",
+      "Urgency with availability indicators",
+      "Social proof through reviews",
+      "Easy booking flow",
+      "Destination preview content",
+    ],
+  },
+  {
+    slug: "b2b-marketplace",
+    title: "B2B Marketplace Conversion Tactics",
+    benefits: [
+      "Buyer-sider value clarity",
+      "Trust verification signals",
+      "Search prominence",
+      "Category navigation optimization",
+      "Supplier credibility showcases",
+    ],
+  },
+  {
+    slug: "dtc",
+    title: "DTC Brand Landing Page Excellence",
+    benefits: [
+      "Brand story integration",
+      "Product photography emphasis",
+      "Subscription offer clarity",
+      "Customer review highlights",
+      "Sustainability messaging",
+    ],
+  },
+  {
+    slug: "marketplace",
+    title: "Two-Sided Marketplace Growth",
+    benefits: [
+      "Balance buyer and seller messaging",
+      "Network effect communication",
+      "Trust mechanisms for both sides",
+      "Onboarding flow optimization",
+      "Category discovery features",
+    ],
+  },
+  {
+    slug: "productivity",
+    title: "Productivity App Landing Pages",
+    benefits: [
+      "Before/after scenarios",
+      "Feature-benefit linkage",
+      "Demo video placement",
+      "Integrations showcase",
+      "Time-savings quantification",
+    ],
+  },
+  {
+    slug: "dev-tools",
+    title: "Developer Tools Landing Page Strategy",
+    benefits: [
+      "Code snippet examples",
+      "Documentation access",
+      "API endpoint clarity",
+      "Open source credibility",
+      "Technical depth indicators",
+    ],
+  },
+  {
+    slug: "marketing",
+    title: "Marketing Tool Conversion Optimization",
+    benefits: [
+      "ROI calculator placement",
+      "Case study prominence",
+      "Integration ecosystem display",
+      "Ease of setup emphasis",
+      "Result-oriented messaging",
+    ],
+  },
+  {
+    slug: "consulting",
+    title: "Consulting Firm Landing Page Audit",
+    benefits: [
+      "Thought leadership showcase",
+      "Client logo placement",
+      "Service clarity and scoping",
+      "Team expertise display",
+      "Consultation CTA optimization",
+    ],
+  },
+];

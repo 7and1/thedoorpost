@@ -1,0 +1,53 @@
+name: Deploy Worker
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "apps/worker/**"
+      - "packages/**"
+      - "docs/**"
+      - "package.json"
+  workflow_dispatch:
+
+concurrency:
+  group: worker-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: apps/worker/package-lock.json
+
+      - name: Install
+        run: npm install
+        working-directory: apps/worker
+
+      - name: Test
+        run: npm test
+        working-directory: apps/worker
+
+      - name: Set OpenAI secret
+        if: ${{ secrets.OPENAI_API_KEY != '' }}
+        run: |
+          # Use printf with redirection to avoid echo and secret exposure in logs
+          printf '%s\n' "${{ secrets.OPENAI_API_KEY }}" | npx wrangler secret put OPENAI_API_KEY --config apps/worker/wrangler.toml
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy
+        run: npx wrangler deploy --config apps/worker/wrangler.toml
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WRANGLER_SEND_METRICS: "false"

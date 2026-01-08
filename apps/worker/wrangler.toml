@@ -1,0 +1,36 @@
+name = "doorpost-worker"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+node_compat = true
+
+# Browser Rendering API
+[browser]
+binding = "MYBROWSER"
+
+# R2 bucket
+[[r2_buckets]]
+binding = "MY_BUCKET"
+bucket_name = "doorpost-snapshots"
+preview_bucket_name = "doorpost-snapshots-dev"
+
+# D1 database
+[[d1_databases]]
+binding = "DB"
+database_name = "doorpost-db"
+database_id = "YOUR_D1_DATABASE_ID"
+
+# KV namespace
+[[kv_namespaces]]
+binding = "KV"
+id = "YOUR_KV_NAMESPACE_ID"
+preview_id = "YOUR_KV_PREVIEW_ID"
+
+[vars]
+OPENAI_MODEL = "gpt-4o"
+R2_PUBLIC_BASE_URL = "https://r2.thedoorpost.com"
+JOB_TTL_SECONDS = "3600"
+REPORT_CACHE_TTL_SECONDS = "172800"
+ENABLE_DOH_CHECK = "true"
+OPENAI_STREAM = "true"
+RATE_LIMIT_IP_PER_MIN = "10"
+RATE_LIMIT_EMAIL_PER_MIN = "5"

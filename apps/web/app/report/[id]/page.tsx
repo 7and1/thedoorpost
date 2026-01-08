@@ -1,0 +1,77 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Navbar from "../../../components/Navbar";
+import Footer from "../../../components/Footer";
+import ReportCard from "../../../components/ReportCard";
+import ScreenshotPanel from "../../../components/ScreenshotPanel";
+import ShareButtons from "../../../components/ShareButtons";
+import FeedbackButtons from "../../../components/FeedbackButtons";
+import type { ReportResult } from "@thedoorpost/shared";
+
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE || "https://api.thedoorpost.com";
+
+async function getReport(id: string): Promise<ReportResult | null> {
+  const res = await fetch(`${API_BASE}/api/reports/${id}`, {
+    next: { revalidate: 3600 },
+  });
+  if (!res.ok) return null;
+  return (await res.json()) as ReportResult;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const report = await getReport(id);
+  if (!report) return { title: "Report not found" };
+  return {
+    title: `TheDoorpost Report — ${report.data.overall_score}/100`,
+    description: report.data.summary,
+    alternates: {
+      canonical: `/report/${id}`,
+    },
+    openGraph: {
+      title: `TheDoorpost Report — ${report.data.overall_score}/100`,
+      description: report.data.summary,
+      url: `https://thedoorpost.com/report/${id}`,
+      images: [{ url: report.image, width: 1200, height: 630 }],
+      type: "website",
+    },
+  };
+}
+
+export default async function ReportPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const report = await getReport(id);
+  if (!report) return notFound();
+
+  return (
+    <main>
+      <Navbar />
+      <section className="section">
+        <h1 style={{ fontSize: "2.2rem", marginBottom: 12 }}>Report #{id}</h1>
+        <ShareButtons
+          reportUrl={`${typeof window !== "undefined" ? window.location.origin : "https://thedoorpost.com"}/report/${id}`}
+        />
+        <div className="grid grid-2">
+          <ScreenshotPanel imageUrl={report.image} alt="Report Screenshot" />
+          <ReportCard report={report.data} />
+        </div>
+        <FeedbackButtons />
+        <div style={{ marginTop: 32, textAlign: "center" }}>
+          <a className="button" href="/">
+            Analyze Another Site
+          </a>
+        </div>
+      </section>
+      <Footer />
+    </main>
+  );
+}

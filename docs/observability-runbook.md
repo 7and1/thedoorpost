@@ -1,0 +1,27 @@
+# Observability & Runbook
+
+## Logging
+
+- Worker logs shipped via Logpush.
+- Browser Rendering errors logged in Worker.
+
+## Metrics
+
+- Request count, latency, error rate.
+- OpenAI API latency and failures.
+- Cache hit ratio (KV + edge cache).
+
+## Alerts
+
+- Error rate > 3% in 5 minutes.
+- P95 latency > 30s for 10 minutes.
+- Browser Rendering failures spike.
+
+## Runbook
+
+- Incident: Browser Rendering degraded
+  - Serve cached reports, prompt retry.
+- Incident: OpenAI failures
+  - Switch model or degrade gracefully.
+- Incident: D1 downtime
+  - Serve cached reports, retry background writes.

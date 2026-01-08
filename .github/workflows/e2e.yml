@@ -1,0 +1,37 @@
+name: E2E Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Base URL for E2E (e.g. https://thedoorpost.com)"
+        required: true
+        type: string
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install
+        run: npm install
+        working-directory: apps/web
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+
+      - name: Run E2E
+        run: npm run test:e2e
+        working-directory: apps/web
+        env:
+          E2E_BASE_URL: ${{ inputs.base_url }}
