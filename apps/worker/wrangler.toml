@@ -1,7 +1,7 @@
 name = "doorpost-worker"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
-node_compat = true
+compatibility_flags = ["nodejs_compat"]
 
 # Browser Rendering API
 [browser]
@@ -17,13 +17,13 @@ preview_bucket_name = "doorpost-snapshots-dev"
 [[d1_databases]]
 binding = "DB"
 database_name = "doorpost-db"
-database_id = "YOUR_D1_DATABASE_ID"
+database_id = "339326be-3bf0-400a-827c-f429d365c4bd"
 
 # KV namespace
 [[kv_namespaces]]
 binding = "KV"
-id = "YOUR_KV_NAMESPACE_ID"
-preview_id = "YOUR_KV_PREVIEW_ID"
+id = "77f1b03891bb4acda3d11765c97f9f0e"
+preview_id = "77f1b03891bb4acda3d11765c97f9f0e"
 
 [vars]
 OPENAI_MODEL = "gpt-4o"
