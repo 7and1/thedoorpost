@@ -8,3 +8,7 @@ wrangler.local-state
 .env.*.local
 .DS_Store
 *.log
+
+# Security: wrangler config files (use .example templates)
+apps/worker/wrangler.toml
+apps/web/wrangler.jsonc

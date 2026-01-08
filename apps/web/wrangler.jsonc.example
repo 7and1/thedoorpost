@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "thedoorpost-web",
+  "pages_build_output_dir": ".open-next",
+  "compatibility_date": "2024-12-30",
+  "compatibility_flags": ["nodejs_compat"],
+  "r2_buckets": [
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "YOUR_R2_BUCKET_NAME",
+      "preview_bucket_name": "YOUR_R2_BUCKET_NAME_DEV"
+    }
+  ],
+  "vars": {
+    "NEXT_PUBLIC_API_BASE": "https://your-worker.your-subdomain.workers.dev",
+    "NEXT_INC_CACHE_R2_PREFIX": "incremental-cache"
+  }
+}
