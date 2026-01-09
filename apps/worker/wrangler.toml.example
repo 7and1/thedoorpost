@@ -10,20 +10,38 @@ binding = "MYBROWSER"
 # R2 bucket
 [[r2_buckets]]
 binding = "MY_BUCKET"
-bucket_name = "YOUR_R2_BUCKET_NAME"
-preview_bucket_name = "YOUR_R2_BUCKET_NAME_DEV"
+bucket_name = "doorpost-snapshots"
+preview_bucket_name = "doorpost-snapshots-dev"
 
-# D1 database
+# D1 database - ID configured via CI/CD secrets
 [[d1_databases]]
 binding = "DB"
-database_name = "YOUR_D1_DATABASE_NAME"
+database_name = "doorpost-db"
 database_id = "YOUR_D1_DATABASE_ID"
 
-# KV namespace
+# KV namespace - ID configured via CI/CD secrets
 [[kv_namespaces]]
 binding = "KV"
 id = "YOUR_KV_NAMESPACE_ID"
-preview_id = "YOUR_KV_PREVIEW_ID"
+preview_id = "YOUR_KV_NAMESPACE_ID"
+
+[durable_objects]
+bindings = [
+  { name = "RATE_LIMITER", class_name = "RateLimiter" },
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["RateLimiter"]
+
+[[queues.producers]]
+queue = "doorpost-jobs"
+binding = "JOBS_QUEUE"
+
+[[queues.consumers]]
+queue = "doorpost-jobs"
+max_batch_size = 5
+max_batch_timeout = 30
 
 [vars]
 OPENAI_MODEL = "gpt-4o"
@@ -32,5 +50,9 @@ JOB_TTL_SECONDS = "3600"
 REPORT_CACHE_TTL_SECONDS = "172800"
 ENABLE_DOH_CHECK = "true"
 OPENAI_STREAM = "true"
+OPENAI_TIMEOUT_MS = "20000"
 RATE_LIMIT_IP_PER_MIN = "10"
 RATE_LIMIT_EMAIL_PER_MIN = "5"
+CONTACT_RATE_LIMIT_PER_HOUR = "5"
+WEBHOOK_TIMEOUT_MS = "5000"
+WEBHOOK_MAX_RETRIES = "2"

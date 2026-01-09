@@ -14,3 +14,5 @@ package-lock.json
 # Security - never commit
 CLAUDE.md
 /docs
+wrangler.toml
+wrangler.jsonc
