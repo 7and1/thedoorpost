@@ -17,4 +17,5 @@ export const ErrorMessages = {
   INVALID_URL: "Invalid URL",
   JOB_NOT_FOUND: "Job not found",
   NOT_FOUND: "Not found",
+  SERVER_ERROR: "Server error",
 } as const;

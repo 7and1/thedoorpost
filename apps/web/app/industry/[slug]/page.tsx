@@ -1,7 +1,29 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Navbar from "../../../components/Navbar";
 import Footer from "../../../components/Footer";
 import { industries } from "../../../lib/industries";
+
+export function generateStaticParams() {
+  return industries.map((industry) => ({ slug: industry.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const industry = industries.find((i) => i.slug === slug);
+  if (!industry) return { title: "Industry not found" };
+  return {
+    title: `${industry.title} — TheDoorpost`,
+    description: `Optimize above-the-fold performance for ${industry.title.toLowerCase()}.`,
+    alternates: {
+      canonical: `/industry/${industry.slug}`,
+    },
+  };
+}
 
 export default async function IndustryPage({
   params,

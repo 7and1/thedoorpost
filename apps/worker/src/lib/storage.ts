@@ -44,6 +44,18 @@ export type StoredReport = {
   data: ReportData;
 };
 
+export type ContactMessage = {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  created_at: number;
+  ip?: string | null;
+  user_agent?: string | null;
+  referrer?: string | null;
+};
+
 export async function putScreenshot(
   env: Env,
   reportId: string,
@@ -117,4 +129,35 @@ export async function getReport(env: Env, id: string) {
     .first();
 
   return result as (StoredReport & { full_report_json?: string }) | undefined;
+}
+
+export async function saveContactMessage(
+  env: Env,
+  record: ContactMessage,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await env.DB.prepare(
+      `INSERT INTO contact_messages (id, name, email, subject, message, created_at, ip, user_agent, referrer)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+      .bind(
+        record.id,
+        record.name,
+        record.email,
+        record.subject,
+        record.message,
+        record.created_at,
+        record.ip ?? null,
+        record.user_agent ?? null,
+        record.referrer ?? null,
+      )
+      .run();
+    return { success: true };
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : "Unknown D1 error";
+    console.error(
+      `[D1] Failed to save contact message ${record.id}: ${errorMsg}`,
+    );
+    return { success: false, error: errorMsg };
+  }
 }

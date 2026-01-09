@@ -7,20 +7,58 @@ import { validateUrl } from "./lib/ssrf";
 import { sha256 } from "./lib/hash";
 import { analyzeScreenshot } from "./lib/openai";
 import { renderScreenshot } from "./lib/render";
-import { putScreenshot, saveReport, getReport } from "./lib/storage";
+import {
+  putScreenshot,
+  saveReport,
+  getReport,
+  saveContactMessage,
+} from "./lib/storage";
 import { createJob, updateJob, completeJob, failJob, getJob } from "./lib/jobs";
 import { streamJob } from "./lib/sse";
 import { getBestReports, getCommonMistakes } from "./lib/aggregates";
 import { rateLimit } from "./lib/rate-limit";
+import { buildReportCsv, buildReportPdf } from "./lib/export";
+import { verifyTurnstile } from "./lib/turnstile";
+import { sendWebhook } from "./lib/webhook";
 import type { ReportData, ReportResult } from "@thedoorpost/shared";
 
 const app = new Hono<{ Bindings: Env }>();
 
-// Strict CORS - only allow thedoorpost.com
-const ALLOWED_ORIGINS = new Set([
-  "https://thedoorpost.com",
-  "https://www.thedoorpost.com",
-]);
+type AnalyzeJobMessage = {
+  jobId: string;
+  url: string;
+  userEmail?: string;
+  webhookUrl?: string;
+  webhookSecret?: string;
+  requestedAt: number;
+};
+
+const DEFAULT_ALLOWED_HOSTNAMES = ["thedoorpost.com", "www.thedoorpost.com"];
+
+function normalizeHostname(entry: string) {
+  const trimmed = entry.trim().toLowerCase();
+  if (!trimmed) return null;
+  if (trimmed.includes("://")) {
+    try {
+      return new URL(trimmed).hostname.toLowerCase();
+    } catch {
+      return null;
+    }
+  }
+  // Strip :port if present (e.g. localhost:3000)
+  const portMatch = trimmed.match(/^(.*?)(:\d+)$/);
+  return (portMatch ? portMatch[1] : trimmed).trim();
+}
+
+function getAllowedHostnames(env: Env) {
+  const hostnames = new Set(DEFAULT_ALLOWED_HOSTNAMES);
+  const raw = env.ALLOWED_ORIGINS || "";
+  for (const entry of raw.split(",")) {
+    const hostname = normalizeHostname(entry);
+    if (hostname) hostnames.add(hostname);
+  }
+  return hostnames;
+}
 
 // API key authentication middleware
 const API_KEY_HEADER = "x-api-key";
@@ -55,39 +93,67 @@ app.use("/api/*", async (c, next) => {
 app.use("*", async (c, next) => {
   const origin = c.req.header("Origin");
   if (origin) {
-    const originUrl = new URL(origin);
-    const hostname = originUrl.hostname.toLowerCase();
-    const allowedHostnames = ["thedoorpost.com", "www.thedoorpost.com"];
-    if (!allowedHostnames.includes(hostname)) {
+    try {
+      const originUrl = new URL(origin);
+      const hostname = originUrl.hostname.toLowerCase();
+      const allowedHostnames = getAllowedHostnames(c.env);
+      if (!allowedHostnames.has(hostname)) {
+        return c.json({ error: ErrorMessages.UNAUTHORIZED_ORIGIN }, 403);
+      }
+    } catch {
       return c.json({ error: ErrorMessages.UNAUTHORIZED_ORIGIN }, 403);
     }
   }
   await next();
 });
 
+// CORS middleware - uses wildcard origin since origin validation
+// is already handled by the middleware above (lines 93-108).
+// The origin validation middleware rejects unauthorized origins with 403
+// before CORS headers are even applied.
 app.use(
   "*",
   cors({
-    origin: (origin) => {
-      if (!origin) return null;
-      try {
-        const originUrl = new URL(origin);
-        const hostname = originUrl.hostname.toLowerCase();
-        return ["thedoorpost.com", "www.thedoorpost.com"].includes(hostname)
-          ? origin
-          : null;
-      } catch {
-        return null;
-      }
-    },
+    origin: "*",
     credentials: true,
   }),
 );
 
-const analyzeSchema = z.object({
-  url: z.string().url(),
-  userEmail: z.string().email().optional(),
-});
+const analyzeSchema = z
+  .object({
+    url: z.string().url().max(2048),
+    userEmail: z.string().email().optional(),
+    user_email: z.string().email().optional(),
+    turnstileToken: z.string().min(1).optional(),
+    turnstile_token: z.string().min(1).optional(),
+    webhookUrl: z.string().url().max(2048).optional(),
+    webhook_url: z.string().url().max(2048).optional(),
+    webhookSecret: z.string().min(1).max(200).optional(),
+    webhook_secret: z.string().min(1).max(200).optional(),
+  })
+  .strict()
+  .transform((data) => ({
+    url: data.url,
+    userEmail: data.userEmail ?? data.user_email,
+    turnstileToken: data.turnstileToken ?? data.turnstile_token,
+    webhookUrl: data.webhookUrl ?? data.webhook_url,
+    webhookSecret: data.webhookSecret ?? data.webhook_secret,
+  }));
+
+const contactSchema = z
+  .object({
+    name: z.string().min(1).max(100),
+    email: z.string().email().max(200),
+    subject: z.string().min(2).max(120),
+    message: z.string().min(5).max(2000),
+    turnstileToken: z.string().min(1).optional(),
+    turnstile_token: z.string().min(1).optional(),
+  })
+  .strict()
+  .transform((data) => ({
+    ...data,
+    turnstileToken: data.turnstileToken ?? data.turnstile_token,
+  }));
 
 function reportCacheKey(hash: string) {
   return `report:by_url:${hash}`;
@@ -98,11 +164,102 @@ function reportTtl(env: Env) {
   return Number.isFinite(ttl) && ttl > 0 ? ttl : 172800;
 }
 
+type AggregatePayload<T> = {
+  items: T[];
+  updated_at: number;
+};
+
+async function refreshAggregate<T>(
+  env: Env,
+  key: string,
+  ttlSeconds: number,
+  compute: () => Promise<T[]>,
+) {
+  const items = await compute();
+  const payload: AggregatePayload<T> = { items, updated_at: Date.now() };
+  await env.KV.put(key, JSON.stringify(payload), {
+    expirationTtl: ttlSeconds,
+  });
+  return payload;
+}
+
+async function getAggregateWithCache<T>(
+  env: Env,
+  key: string,
+  ttlSeconds: number,
+  refreshMs: number,
+  compute: () => Promise<T[]>,
+  ctx?: ExecutionContext,
+) {
+  const cached = await env.KV.get(key);
+  if (cached) {
+    try {
+      const payload = JSON.parse(cached) as AggregatePayload<T>;
+      if (
+        ctx &&
+        payload.updated_at &&
+        Date.now() - payload.updated_at > refreshMs
+      ) {
+        ctx.waitUntil(refreshAggregate(env, key, ttlSeconds, compute));
+      }
+      return payload;
+    } catch {
+      await env.KV.delete(key);
+    }
+  }
+
+  return refreshAggregate(env, key, ttlSeconds, compute);
+}
+
 async function getCachedReport(env: Env, url: string) {
   const hash = await sha256(url);
   const raw = await env.KV.get(reportCacheKey(hash));
   if (!raw) return null;
-  return JSON.parse(raw) as ReportResult;
+  try {
+    return JSON.parse(raw) as ReportResult;
+  } catch {
+    await env.KV.delete(reportCacheKey(hash));
+    return null;
+  }
+}
+
+async function fetchReportResult(env: Env, id: string, withSourceUrl = false) {
+  let cached: ReportResult | null = null;
+  const cachedRaw = await env.KV.get(`report:by_id:${id}`);
+  if (cachedRaw) {
+    try {
+      cached = JSON.parse(cachedRaw) as ReportResult;
+      if (!withSourceUrl) {
+        return { result: cached, sourceUrl: undefined };
+      }
+    } catch {
+      await env.KV.delete(`report:by_id:${id}`);
+    }
+  }
+
+  const record = await getReport(env, id);
+  if (!record) {
+    return cached ? { result: cached, sourceUrl: undefined } : null;
+  }
+
+  let data: ReportData;
+  try {
+    data = JSON.parse((record as any).full_report_json ?? "{}") as ReportData;
+  } catch {
+    return cached ? { result: cached, sourceUrl: record.url } : null;
+  }
+  const base = env.R2_PUBLIC_BASE_URL || "https://r2.thedoorpost.com";
+  const result: ReportResult = {
+    id: record.id,
+    data,
+    image: `${base.replace(/\/$/, "")}/${record.screenshot_path}`,
+  };
+
+  await env.KV.put(`report:by_id:${id}`, JSON.stringify(result), {
+    expirationTtl: 3600,
+  });
+
+  return { result, sourceUrl: record.url };
 }
 
 async function setCachedReport(env: Env, url: string, result: ReportResult) {
@@ -118,22 +275,20 @@ async function setCachedReport(env: Env, url: string, result: ReportResult) {
 /**
  * Processes a single screenshot analysis job.
  *
- * IMPORTANT: Current limitation - jobs are processed sequentially within each
- * worker instance via waitUntil(). For parallel processing, migrate to
- * Cloudflare Queues:
- * https://developers.cloudflare.com/queues/
- *
- * TODO: Implement Cloudflare Queues for true parallel job processing
- * and better throughput under load.
+ * Jobs are dispatched via Cloudflare Queues for parallel processing.
  */
 async function processJob(
   env: Env,
   jobId: string,
   url: string,
   userEmail?: string,
+  webhookUrl?: string,
+  webhookSecret?: string,
 ) {
   const now = Date.now();
   const reportId = crypto.randomUUID();
+  const timings: Record<string, number> = {};
+  const jobStart = Date.now();
 
   await updateJob(env, jobId, {
     status: "running",
@@ -182,6 +337,7 @@ async function processJob(
         message: JobMessages.GENERATING_REPORT,
       });
       await setCachedReport(env, url, result);
+      const storageStart = Date.now();
       const dbResult = await saveReport(env, {
         id: reportId,
         url,
@@ -192,12 +348,46 @@ async function processJob(
         user_email: userEmail ?? null,
         data: mock,
       });
+      timings.storage_ms = Date.now() - storageStart;
       if (!dbResult.success) {
         console.warn(
           `[D1] Report save failed (non-critical): ${dbResult.error}`,
         );
       }
+      timings.total_ms = Date.now() - jobStart;
+      console.log(
+        JSON.stringify({
+          type: "job_timing",
+          job_id: jobId,
+          status: "complete",
+          timings,
+        }),
+      );
+      await updateJob(env, jobId, { timings });
       await completeJob(env, jobId, result);
+      if (webhookUrl) {
+        const payload = {
+          event: "analysis.complete",
+          job_id: jobId,
+          url,
+          user_email: userEmail ?? null,
+          report: result,
+          timings,
+        };
+        const ok = await sendWebhook(env, webhookUrl, payload, webhookSecret);
+        if (!ok) {
+          console.warn(`[WEBHOOK] Delivery failed for job ${jobId}`);
+          await env.KV.put(
+            `dlq:webhook:${jobId}`,
+            JSON.stringify({
+              url: webhookUrl,
+              payload,
+              failedAt: Date.now(),
+            }),
+            { expirationTtl: 604800 },
+          );
+        }
+      }
       return;
     }
 
@@ -205,7 +395,9 @@ async function processJob(
       progress: 40,
       message: JobMessages.SCREENSHOTTING,
     });
+    const renderStart = Date.now();
     const render = await renderScreenshot(env, url);
+    timings.render_ms = Date.now() - renderStart;
 
     await updateJob(env, jobId, {
       progress: 70,
@@ -213,14 +405,22 @@ async function processJob(
     });
     const aiBase64 = Buffer.from(render.ai).toString("base64");
 
-    const report = await analyzeScreenshot(env, aiBase64, async (score) => {
-      await updateJob(env, jobId, { partial_score: score, progress: 75 });
-    });
+    const aiStart = Date.now();
+    const report = await analyzeScreenshot(
+      env,
+      aiBase64,
+      async (score) => {
+        await updateJob(env, jobId, { partial_score: score, progress: 75 });
+      },
+      render.contentType === "image/png" ? "image/png" : "image/webp",
+    );
+    timings.ai_ms = Date.now() - aiStart;
 
     await updateJob(env, jobId, {
       progress: 90,
       message: JobMessages.GENERATING_REPORT,
     });
+    const storageStart = Date.now();
     const { key, url: imageUrl } = await putScreenshot(
       env,
       reportId,
@@ -245,14 +445,84 @@ async function processJob(
       user_email: userEmail ?? null,
       data: report,
     });
+    timings.storage_ms = Date.now() - storageStart;
     if (!dbResult.success) {
       console.warn(`[D1] Report save failed (non-critical): ${dbResult.error}`);
     }
 
+    timings.total_ms = Date.now() - jobStart;
+    await updateJob(env, jobId, {
+      timings,
+    });
+    console.log(
+      JSON.stringify({
+        type: "job_timing",
+        job_id: jobId,
+        status: "complete",
+        timings,
+      }),
+    );
     await completeJob(env, jobId, result);
+    if (webhookUrl) {
+      const payload = {
+        event: "analysis.complete",
+        job_id: jobId,
+        url,
+        user_email: userEmail ?? null,
+        report: result,
+        timings,
+      };
+      const ok = await sendWebhook(env, webhookUrl, payload, webhookSecret);
+      if (!ok) {
+        console.warn(`[WEBHOOK] Delivery failed for job ${jobId}`);
+        await env.KV.put(
+          `dlq:webhook:${jobId}`,
+          JSON.stringify({
+            url: webhookUrl,
+            payload,
+            failedAt: Date.now(),
+          }),
+          { expirationTtl: 604800 },
+        );
+      }
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    timings.total_ms = Date.now() - jobStart;
+    console.log(
+      JSON.stringify({
+        type: "job_timing",
+        job_id: jobId,
+        status: "error",
+        timings,
+        error: message,
+      }),
+    );
+    await updateJob(env, jobId, { timings });
     await failJob(env, jobId, message);
+    if (webhookUrl) {
+      const payload = {
+        event: "analysis.error",
+        job_id: jobId,
+        url,
+        user_email: userEmail ?? null,
+        error: message,
+        timings,
+      };
+      const ok = await sendWebhook(env, webhookUrl, payload, webhookSecret);
+      if (!ok) {
+        console.warn(`[WEBHOOK] Delivery failed for job ${jobId}`);
+        await env.KV.put(
+          `dlq:webhook:${jobId}`,
+          JSON.stringify({
+            url: webhookUrl,
+            payload,
+            failedAt: Date.now(),
+          }),
+          { expirationTtl: 604800 },
+        );
+      }
+    }
   }
 }
 
@@ -263,12 +533,17 @@ app.post("/api/analyze", async (c) => {
     return c.json({ error: ErrorMessages.INVALID_REQUEST }, 400);
   }
 
-  const { url, userEmail } = parsed.data;
+  const { url, userEmail, turnstileToken, webhookUrl, webhookSecret } =
+    parsed.data;
   // Only trust cf-connecting-ip from Cloudflare to prevent IP spoofing
   // x-forwarded-for can be spoofed by attackers, never use it for rate limiting
   const ip = c.req.header("cf-connecting-ip") || "unknown";
-  const ipLimit = Number(c.env.RATE_LIMIT_IP_PER_MIN || 10);
-  const emailLimit = Number(c.env.RATE_LIMIT_EMAIL_PER_MIN || 5);
+  const ipLimitRaw = Number(c.env.RATE_LIMIT_IP_PER_MIN || 10);
+  const emailLimitRaw = Number(c.env.RATE_LIMIT_EMAIL_PER_MIN || 5);
+  const ipLimit =
+    Number.isFinite(ipLimitRaw) && ipLimitRaw > 0 ? ipLimitRaw : 10;
+  const emailLimit =
+    Number.isFinite(emailLimitRaw) && emailLimitRaw > 0 ? emailLimitRaw : 5;
 
   if (!(await rateLimit(c.env, `ip:${ip}`, ipLimit, 60))) {
     return c.json({ error: ErrorMessages.RATE_LIMIT_EXCEEDED }, 429);
@@ -289,6 +564,27 @@ app.post("/api/analyze", async (c) => {
     );
   }
 
+  const turnstileOk = await verifyTurnstile(c.env, turnstileToken, ip);
+  if (!turnstileOk) {
+    return c.json({ error: ErrorMessages.UNAUTHORIZED }, 403);
+  }
+
+  let normalizedWebhookUrl: string | undefined;
+  if (webhookUrl) {
+    try {
+      const parsedWebhook = await validateUrl(
+        webhookUrl,
+        c.env.ENABLE_DOH_CHECK !== "false",
+      );
+      if (parsedWebhook.protocol !== "https:") {
+        return c.json({ error: ErrorMessages.INVALID_URL }, 400);
+      }
+      normalizedWebhookUrl = parsedWebhook.toString();
+    } catch {
+      return c.json({ error: ErrorMessages.INVALID_URL }, 400);
+    }
+  }
+
   const cached = await getCachedReport(c.env, url);
   if (cached) {
     return c.json({ status: "complete", ...cached });
@@ -303,7 +599,23 @@ app.post("/api/analyze", async (c) => {
     created_at: Date.now(),
   });
 
-  c.executionCtx.waitUntil(processJob(c.env, jobId, url, userEmail));
+  try {
+    await c.env.JOBS_QUEUE.send({
+      jobId,
+      url,
+      userEmail,
+      webhookUrl: normalizedWebhookUrl,
+      webhookSecret,
+      requestedAt: Date.now(),
+    } as AnalyzeJobMessage);
+  } catch (err) {
+    await failJob(
+      c.env,
+      jobId,
+      err instanceof Error ? err.message : "Queue enqueue failed",
+    );
+    return c.json({ error: ErrorMessages.SERVER_ERROR }, 500);
+  }
 
   const origin = new URL(c.req.url).origin;
   return c.json({
@@ -312,6 +624,50 @@ app.post("/api/analyze", async (c) => {
     stream_url: `${origin}/api/jobs/${jobId}/stream`,
     poll_url: `${origin}/api/jobs/${jobId}`,
   });
+});
+
+app.post("/api/contact", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const parsed = contactSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: ErrorMessages.INVALID_REQUEST }, 400);
+  }
+
+  const { turnstileToken } = parsed.data;
+  const ip = c.req.header("cf-connecting-ip") || "unknown";
+  const contactLimitRaw = Number(c.env.CONTACT_RATE_LIMIT_PER_HOUR || 5);
+  const contactLimit =
+    Number.isFinite(contactLimitRaw) && contactLimitRaw > 0
+      ? contactLimitRaw
+      : 5;
+  if (!(await rateLimit(c.env, `contact:ip:${ip}`, contactLimit, 3600))) {
+    return c.json({ error: ErrorMessages.RATE_LIMIT_EXCEEDED }, 429);
+  }
+
+  const turnstileOk = await verifyTurnstile(c.env, turnstileToken, ip);
+  if (!turnstileOk) {
+    return c.json({ error: ErrorMessages.UNAUTHORIZED }, 403);
+  }
+
+  const { name, email, subject, message } = parsed.data;
+  const record = {
+    id: crypto.randomUUID(),
+    name,
+    email,
+    subject,
+    message,
+    created_at: Date.now(),
+    ip: ip === "unknown" ? null : ip,
+    user_agent: c.req.header("User-Agent") || null,
+    referrer: c.req.header("Referer") || null,
+  };
+
+  const result = await saveContactMessage(c.env, record);
+  if (!result.success) {
+    return c.json({ error: ErrorMessages.SERVER_ERROR }, 500);
+  }
+
+  return c.json({ success: true });
 });
 
 app.get("/api/jobs/:id", async (c) => {
@@ -326,45 +682,68 @@ app.get("/api/jobs/:id/stream", (c) => {
 
 app.get("/api/reports/:id", async (c) => {
   const id = c.req.param("id");
-  const cached = await c.env.KV.get(`report:by_id:${id}`);
-  if (cached) {
-    return c.json(JSON.parse(cached), 200, {
-      "Cache-Control": "public, max-age=3600",
-    });
-  }
-
-  const record = await getReport(c.env, id);
-  if (!record) return c.json({ error: ErrorMessages.NOT_FOUND }, 404);
-
-  const base = c.env.R2_PUBLIC_BASE_URL || "https://r2.thedoorpost.com";
-  const data = JSON.parse(
-    (record as any).full_report_json ?? "{}",
-  ) as ReportData;
-  const result: ReportResult = {
-    id: record.id,
-    data,
-    image: `${base.replace(/\/$/, "")}/${record.screenshot_path}`,
-  };
-
-  await c.env.KV.put(`report:by_id:${id}`, JSON.stringify(result), {
-    expirationTtl: 3600,
-  });
-  return c.json(result, 200, {
+  const data = await fetchReportResult(c.env, id);
+  if (!data) return c.json({ error: ErrorMessages.NOT_FOUND }, 404);
+  return c.json(data.result, 200, {
     "Cache-Control": "public, max-age=3600",
+  });
+});
+
+app.get("/api/reports/:id/export.csv", async (c) => {
+  const id = c.req.param("id");
+  const data = await fetchReportResult(c.env, id, true);
+  if (!data) return c.json({ error: ErrorMessages.NOT_FOUND }, 404);
+  const csv = buildReportCsv(data.result, data.sourceUrl);
+  return new Response(csv, {
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename=\"thedoorpost-report-${id}.csv\"`,
+      "Cache-Control": "private, max-age=60",
+    },
+  });
+});
+
+app.get("/api/reports/:id/export.pdf", async (c) => {
+  const id = c.req.param("id");
+  const data = await fetchReportResult(c.env, id, true);
+  if (!data) return c.json({ error: ErrorMessages.NOT_FOUND }, 404);
+  const pdfBytes = await buildReportPdf(data.result);
+  return new Response(pdfBytes, {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename=\"thedoorpost-report-${id}.pdf\"`,
+      "Cache-Control": "private, max-age=60",
+    },
   });
 });
 
 app.get("/api/aggregate/best", async (c) => {
-  const data = await getBestReports(c.env);
-  return c.json({ items: data }, 200, {
-    "Cache-Control": "public, max-age=3600",
+  const payload = await getAggregateWithCache(
+    c.env,
+    "aggregate:best:v1",
+    3600,
+    15 * 60 * 1000,
+    () => getBestReports(c.env),
+    c.executionCtx,
+  );
+  return c.json(payload, 200, {
+    "Cache-Control":
+      "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
   });
 });
 
 app.get("/api/aggregate/common-mistakes", async (c) => {
-  const data = await getCommonMistakes(c.env);
-  return c.json({ items: data }, 200, {
-    "Cache-Control": "public, max-age=3600",
+  const payload = await getAggregateWithCache(
+    c.env,
+    "aggregate:common-mistakes:v1",
+    3600,
+    15 * 60 * 1000,
+    () => getCommonMistakes(c.env),
+    c.executionCtx,
+  );
+  return c.json(payload, 200, {
+    "Cache-Control":
+      "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
   });
 });
 
@@ -378,14 +757,23 @@ app.get("/health", async (c) => {
       r2: "unknown",
       openai: "unknown",
     },
+    timings: {
+      kv_ms: 0,
+      d1_ms: 0,
+      r2_ms: 0,
+      total_ms: 0,
+    },
   };
 
+  const start = Date.now();
   // KV check
   try {
     const testKey = `health:check:${Date.now()}`;
+    const kvStart = Date.now();
     await c.env.KV.put(testKey, "ping", { expirationTtl: 10 });
     const value = await c.env.KV.get(testKey);
     checks.dependencies.kv = value === "ping" ? "ok" : "degraded";
+    checks.timings.kv_ms = Date.now() - kvStart;
   } catch (err) {
     checks.dependencies.kv = "error";
     checks.ok = false;
@@ -394,8 +782,10 @@ app.get("/health", async (c) => {
 
   // D1 check
   try {
+    const d1Start = Date.now();
     await c.env.DB.prepare("SELECT 1").first();
     checks.dependencies.d1 = "ok";
+    checks.timings.d1_ms = Date.now() - d1Start;
   } catch (err) {
     checks.dependencies.d1 = "error";
     checks.ok = false;
@@ -405,9 +795,11 @@ app.get("/health", async (c) => {
   // R2 check
   try {
     const testKey = `health-check-${Date.now()}`;
+    const r2Start = Date.now();
     await c.env.MY_BUCKET.put(testKey, new Uint8Array([1, 2, 3]));
     await c.env.MY_BUCKET.delete(testKey);
     checks.dependencies.r2 = "ok";
+    checks.timings.r2_ms = Date.now() - r2Start;
   } catch (err) {
     checks.dependencies.r2 = "error";
     checks.ok = false;
@@ -428,11 +820,36 @@ app.get("/health", async (c) => {
     console.error("[HEALTH] OpenAI check failed:", err);
   }
 
+  checks.timings.total_ms = Date.now() - start;
   return c.json(checks, checks.ok ? 200 : 503);
 });
 
 export default {
   fetch: app.fetch,
+  queue: async (
+    batch: MessageBatch<AnalyzeJobMessage>,
+    env: Env,
+    _ctx: ExecutionContext,
+  ) => {
+    for (const message of batch.messages) {
+      const body = message.body;
+      try {
+        await processJob(
+          env,
+          body.jobId,
+          body.url,
+          body.userEmail,
+          body.webhookUrl,
+          body.webhookSecret,
+        );
+        message.ack();
+      } catch (err) {
+        console.error("[QUEUE] Job failed:", err);
+        message.retry();
+      }
+    }
+  },
 };
 
 export { app };
+export { RateLimiter } from "./lib/rate-limit";

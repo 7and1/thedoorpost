@@ -41,7 +41,21 @@ export default function ReportCard({ report }: { report: ReportData }) {
               border: "1px solid var(--border)",
             }}
           >
-            <div style={{ fontWeight: 600 }}>{fix.title}</div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <div style={{ fontWeight: 600 }}>{fix.title}</div>
+              {fix.impact && (
+                <span
+                  style={{
+                    fontSize: "0.7rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    color: "var(--muted)",
+                  }}
+                >
+                  {fix.impact}
+                </span>
+              )}
+            </div>
             <div
               style={{
                 color: "var(--muted)",

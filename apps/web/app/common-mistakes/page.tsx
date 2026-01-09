@@ -13,6 +13,7 @@ async function getMistakes() {
   if (!res.ok) return { items: [] };
   return res.json() as Promise<{
     items: Array<{ title: string; count: number }>;
+    updated_at?: number;
   }>;
 }
 
@@ -20,6 +21,9 @@ export const metadata: Metadata = {
   title: "Common Landing Page Mistakes — TheDoorpost Insights",
   description:
     "Frequent issues found in low-scoring hero sections, aggregated from real analyses.",
+  alternates: {
+    canonical: "/common-mistakes",
+  },
   robots: {
     index: true,
     follow: true,
@@ -27,8 +31,16 @@ export const metadata: Metadata = {
 };
 
 export default async function CommonMistakes() {
-  const { items } = await getMistakes();
+  const { items, updated_at } = await getMistakes();
   const hasNoData = items.length === 0;
+  const updatedLabel =
+    updated_at && Number.isFinite(updated_at)
+      ? new Date(updated_at).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      : null;
   return (
     <>
       {hasNoData && <meta name="robots" content="noindex, follow" />}
@@ -41,6 +53,11 @@ export default async function CommonMistakes() {
           <p style={{ color: "var(--muted)" }}>
             Frequent issues aggregated from low-scoring reports.
           </p>
+          {updatedLabel && (
+            <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
+              Last updated: {updatedLabel}
+            </p>
+          )}
           <div className="grid" style={{ marginTop: 24 }}>
             {items.length === 0 && (
               <div className="card">

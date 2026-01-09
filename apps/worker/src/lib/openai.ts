@@ -21,6 +21,7 @@ async function fetchWithRetry(
   url: string,
   options: RequestInit,
   maxRetries = 3,
+  timeoutMs = 20000,
 ): Promise<Response> {
   let lastError: Error | null = null;
 
@@ -30,8 +31,12 @@ async function fetchWithRetry(
       throw new Error("OpenAI circuit breaker is open");
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
-      const res = await fetch(url, options);
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timeoutId);
 
       // Handle rate limiting (429) specifically
       if (res.status === 429) {
@@ -71,6 +76,7 @@ async function fetchWithRetry(
         await sleep(delayMs);
       }
     } catch (err) {
+      clearTimeout(timeoutId);
       lastError = err instanceof Error ? err : new Error("Unknown fetch error");
       console.error(
         `[OPENAI] Fetch error (attempt ${attempt + 1}/${maxRetries}):`,
@@ -100,9 +106,14 @@ export async function analyzeScreenshot(
   env: Env,
   imageBase64: string,
   onPartialScore?: (score: number) => Promise<void> | void,
+  mimeType: "image/webp" | "image/png" = "image/webp",
 ): Promise<ReportData> {
   const model = env.OPENAI_MODEL || "gpt-4o";
   const stream = env.OPENAI_STREAM === "true";
+  const timeoutMs = Number(env.OPENAI_TIMEOUT_MS || 20000);
+  const timeout =
+    Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 20000;
+  const imageMime = mimeType === "image/png" ? "image/png" : "image/webp";
 
   const payload = {
     model,
@@ -114,7 +125,7 @@ export async function analyzeScreenshot(
           { type: "text", text: USER_PROMPT },
           {
             type: "image_url",
-            image_url: { url: `data:image/webp;base64,${imageBase64}` },
+            image_url: { url: `data:${imageMime};base64,${imageBase64}` },
           },
         ],
       },
@@ -135,6 +146,8 @@ export async function analyzeScreenshot(
       },
       body: JSON.stringify(payload),
     },
+    3,
+    timeout,
   );
 
   if (!res.body) {
@@ -145,7 +158,13 @@ export async function analyzeScreenshot(
     const data = (await res.json()) as {
       choices: Array<{ message: { content: string } }>;
     };
-    return JSON.parse(data.choices[0].message.content) as ReportData;
+    try {
+      return JSON.parse(data.choices[0].message.content) as ReportData;
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Invalid OpenAI JSON response";
+      throw new Error(`OpenAI response parse failed: ${message}`);
+    }
   }
 
   const reader = res.body.getReader();
@@ -194,5 +213,11 @@ export async function analyzeScreenshot(
   const jsonStart = buffer.indexOf("{");
   const jsonEnd = buffer.lastIndexOf("}");
   const json = jsonStart >= 0 ? buffer.slice(jsonStart, jsonEnd + 1) : buffer;
-  return JSON.parse(json) as ReportData;
+  try {
+    return JSON.parse(json) as ReportData;
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Invalid OpenAI JSON response";
+    throw new Error(`OpenAI response parse failed: ${message}`);
+  }
 }

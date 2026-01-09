@@ -19,6 +19,7 @@ async function getBest() {
       summary: string;
       image: string;
     }>;
+    updated_at?: number;
   }>;
 }
 
@@ -26,6 +27,9 @@ export const metadata: Metadata = {
   title: "Best Landing Pages 2026 — TheDoorpost Gallery",
   description:
     "Showcase of landing pages scoring 90+ on above-the-fold analysis.",
+  alternates: {
+    canonical: "/best-landing-pages",
+  },
   robots: {
     index: true,
     follow: true,
@@ -33,8 +37,16 @@ export const metadata: Metadata = {
 };
 
 export default async function BestLandingPages() {
-  const { items } = await getBest();
+  const { items, updated_at } = await getBest();
   const hasNoData = items.length === 0;
+  const updatedLabel =
+    updated_at && Number.isFinite(updated_at)
+      ? new Date(updated_at).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      : null;
   return (
     <>
       {hasNoData && <meta name="robots" content="noindex, follow" />}
@@ -47,6 +59,11 @@ export default async function BestLandingPages() {
           <p style={{ color: "var(--muted)" }}>
             A showcase of hero sections scoring 90+. Updated regularly.
           </p>
+          {updatedLabel && (
+            <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
+              Last updated: {updatedLabel}
+            </p>
+          )}
           <div className="grid grid-2" style={{ marginTop: 24 }}>
             {items.length === 0 && (
               <div className="card">
@@ -59,6 +76,7 @@ export default async function BestLandingPages() {
                   src={item.image}
                   alt={item.url}
                   style={{ width: "100%", borderRadius: 12 }}
+                  loading="lazy"
                 />
                 <div style={{ marginTop: 12, fontWeight: 600 }}>
                   {item.score}/100

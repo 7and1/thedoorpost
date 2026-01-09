@@ -8,15 +8,28 @@ interface ShareButtonsProps {
 
 export default function ShareButtons({ reportUrl }: ShareButtonsProps) {
   const [copied, setCopied] = useState(false);
+  const isAbsolute = reportUrl.startsWith("http");
   const fullUrl =
     typeof window !== "undefined"
-      ? window.location.href
-      : `https://thedoorpost.com${reportUrl}`;
+      ? isAbsolute
+        ? reportUrl
+        : `${window.location.origin}${reportUrl}`
+      : isAbsolute
+        ? reportUrl
+        : `https://thedoorpost.com${reportUrl}`;
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(fullUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(fullUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      try {
+        window.prompt("Copy report link:", fullUrl);
+      } catch {
+        // no-op
+      }
+    }
   };
 
   const shareText = "Check out this above-the-fold analysis from TheDoorpost";

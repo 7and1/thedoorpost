@@ -65,15 +65,19 @@ function isIpAddress(hostname: string): boolean {
   return /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname) || isIpv6(hostname);
 }
 
-async function resolveHostname(hostname: string): Promise<string[]> {
+async function resolveHostname(
+  hostname: string,
+  type: "A" | "AAAA",
+): Promise<string[]> {
+  const cacheKey = `${hostname}:${type}`;
   // Check DNS pinning cache first to prevent DNS rebinding
-  const cached = dnsCache.get(hostname);
+  const cached = dnsCache.get(cacheKey);
   const now = Date.now();
   if (cached && now - cached.timestamp < DNS_CACHE_TTL) {
     return cached.ips;
   }
 
-  const url = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=A`;
+  const url = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=${type}`;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
 
@@ -93,10 +97,12 @@ async function resolveHostname(hostname: string): Promise<string[]> {
     }
 
     const data = (await res.json()) as { Answer?: Array<{ data: string }> };
-    const ips = (data.Answer ?? []).map((a) => a.data).filter(Boolean);
+    const ips = (data.Answer ?? [])
+      .map((a) => a.data)
+      .filter((record) => record && isIpAddress(record));
 
     // Cache the result for DNS pinning
-    dnsCache.set(hostname, { ips, timestamp: now });
+    dnsCache.set(cacheKey, { ips, timestamp: now });
 
     return ips;
   } catch (err) {
@@ -138,8 +144,14 @@ export async function validateUrl(
   }
 
   if (enableDoh) {
-    const ips = await resolveHostname(hostname);
-    if (ips.some(isPrivateIpv4)) {
+    const [ips4, ips6] = await Promise.all([
+      resolveHostname(hostname, "A"),
+      resolveHostname(hostname, "AAAA"),
+    ]);
+    const ips = [...ips4, ...ips6];
+    if (
+      ips.some((ip) => (isIpv6(ip) ? isPrivateIpv6(ip) : isPrivateIpv4(ip)))
+    ) {
       throw new Error("Hostname resolves to private IP");
     }
   }

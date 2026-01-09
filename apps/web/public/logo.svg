@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="TheDoorpost logo">
+  <rect width="512" height="512" rx="96" fill="#1d4ed8" />
+  <rect x="160" y="96" width="192" height="320" rx="20" fill="#ffffff" />
+  <rect x="232" y="240" width="16" height="16" rx="8" fill="#1d4ed8" />
+</svg>

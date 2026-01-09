@@ -1,7 +1,29 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Navbar from "../../../components/Navbar";
 import Footer from "../../../components/Footer";
 import { useCases } from "../../../lib/useCases";
+
+export function generateStaticParams() {
+  return useCases.map((useCase) => ({ slug: useCase.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const useCase = useCases.find((u) => u.slug === slug);
+  if (!useCase) return { title: "Use case not found" };
+  return {
+    title: `${useCase.title} — TheDoorpost`,
+    description: `Above-the-fold insights for ${useCase.title.toLowerCase()}.`,
+    alternates: {
+      canonical: `/use-case/${useCase.slug}`,
+    },
+  };
+}
 
 export default async function UseCasePage({
   params,

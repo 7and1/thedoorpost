@@ -34,4 +34,10 @@ export type JobStatus = {
   result?: ReportResult;
   partial_score?: number;
   error?: string;
+  timings?: {
+    render_ms?: number;
+    ai_ms?: number;
+    storage_ms?: number;
+    total_ms?: number;
+  };
 };

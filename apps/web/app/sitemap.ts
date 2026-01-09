@@ -11,6 +11,9 @@ export default function sitemap() {
     "/blog",
     "/best-landing-pages",
     "/common-mistakes",
+    "/contact",
+    "/privacy",
+    "/terms",
   ];
   const routes = staticRoutes.map((path) => ({
     url: `${base}${path}`,

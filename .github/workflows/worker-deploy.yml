@@ -2,44 +2,37 @@ name: Deploy Worker
 
 on:
   push:
-    branches: ["main"]
+    branches: [main]
     paths:
       - "apps/worker/**"
-      - "packages/**"
-      - "docs/**"
-      - "package.json"
+      - "packages/shared/**"
+      - ".github/workflows/worker-deploy.yml"
   workflow_dispatch:
-
-concurrency:
-  group: worker-deploy
-  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    defaults:
+      run:
+        working-directory: apps/worker
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
-          cache-dependency-path: apps/worker/package-lock.json
 
-      - name: Install
-        run: npm install
-        working-directory: apps/worker
+      - name: Install dependencies
+        run: npm ci
 
       - name: Test
         run: npm test
-        working-directory: apps/worker
 
       - name: Set OpenAI secret
         run: |
           if [ -n "${{ secrets.OPENAI_API_KEY }}" ]; then
-            printf '%s\n' "${{ secrets.OPENAI_API_KEY }}" | npx wrangler secret put OPENAI_API_KEY --config apps/worker/wrangler.toml
+            printf '%s\n' "${{ secrets.OPENAI_API_KEY }}" | npx wrangler secret put OPENAI_API_KEY
           else
             echo "OPENAI_API_KEY not set, skipping secret configuration"
           fi
@@ -47,9 +40,10 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Deploy
-        run: npx wrangler deploy --config apps/worker/wrangler.toml
+      - name: Deploy to Cloudflare Workers
+        run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          WRANGLER_SEND_METRICS: "false"
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+          KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}

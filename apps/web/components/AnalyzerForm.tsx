@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { ReportResult } from "@thedoorpost/shared";
 import ProgressStepper from "./ProgressStepper";
 import ReportCard from "./ReportCard";
 import ScreenshotPanel from "./ScreenshotPanel";
+import TurnstileWidget from "./TurnstileWidget";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "https://api.thedoorpost.com";
@@ -24,8 +25,11 @@ export default function AnalyzerForm() {
   const [partialScore, setPartialScore] = useState<number | null>(null);
   const [result, setResult] = useState<ReportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileReset, setTurnstileReset] = useState(0);
   const eventSourceRef = useRef<EventSource | null>(null);
   const pollingRef = useRef<number | null>(null);
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
   useEffect(() => {
     return () => {
@@ -52,15 +56,25 @@ export default function AnalyzerForm() {
       const data = await res.json();
       setProgress(data.progress || 0);
       setMessage(data.message || "");
-      if (data.partial_score) setPartialScore(data.partial_score);
+      if (typeof data.partial_score === "number") {
+        setPartialScore(data.partial_score);
+      }
       if (data.status === "complete") {
         setResult(data.result);
         setStatus("complete");
+        if (turnstileEnabled) {
+          setTurnstileToken("");
+          setTurnstileReset((value) => value + 1);
+        }
         if (pollingRef.current) window.clearInterval(pollingRef.current);
       }
       if (data.status === "error") {
         setError(data.error || "Analysis failed");
         setStatus("error");
+        if (turnstileEnabled) {
+          setTurnstileToken("");
+          setTurnstileReset((value) => value + 1);
+        }
         if (pollingRef.current) window.clearInterval(pollingRef.current);
       }
     }, 1200);
@@ -78,13 +92,19 @@ export default function AnalyzerForm() {
       const data = JSON.parse(event.data);
       setProgress(data.progress || 0);
       setMessage(data.message || "");
-      if (data.partial_score) setPartialScore(data.partial_score);
+      if (typeof data.partial_score === "number") {
+        setPartialScore(data.partial_score);
+      }
     });
 
     es.addEventListener("complete", (event) => {
       const data = JSON.parse(event.data);
       setResult(data);
       setStatus("complete");
+      if (turnstileEnabled) {
+        setTurnstileToken("");
+        setTurnstileReset((value) => value + 1);
+      }
       es.close();
     });
 
@@ -96,24 +116,34 @@ export default function AnalyzerForm() {
         setError("Analysis failed");
       }
       setStatus("error");
+      if (turnstileEnabled) {
+        setTurnstileToken("");
+        setTurnstileReset((value) => value + 1);
+      }
       es.close();
       startPolling(pollUrl);
     });
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     reset();
+    if (turnstileEnabled && !turnstileToken) {
+      setError("Please complete the verification challenge.");
+      setStatus("error");
+      return;
+    }
     setStatus("loading");
     try {
-      // user_email flow: optional email passed to worker for notifications/follow-ups
+      // userEmail flow: optional email passed to worker for notifications/follow-ups
       const res = await fetch(`${API_BASE}/api/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url,
-          // Optionally include user_email if provided
-          ...(email ? { user_email: email } : {}),
+          // Optionally include userEmail if provided
+          ...(email ? { userEmail: email } : {}),
+          ...(turnstileToken ? { turnstileToken } : {}),
         }),
       });
 
@@ -127,6 +157,10 @@ export default function AnalyzerForm() {
       if (data.status === "complete") {
         setResult(data);
         setStatus("complete");
+        if (turnstileEnabled) {
+          setTurnstileToken("");
+          setTurnstileReset((value) => value + 1);
+        }
         return;
       }
 
@@ -136,6 +170,10 @@ export default function AnalyzerForm() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Request failed");
       setStatus("error");
+      if (turnstileEnabled) {
+        setTurnstileToken("");
+        setTurnstileReset((value) => value + 1);
+      }
     }
   };
 
@@ -154,6 +192,7 @@ export default function AnalyzerForm() {
           type="url"
           required
           placeholder="https://example.com"
+          maxLength={2048}
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           className="input"
@@ -165,6 +204,7 @@ export default function AnalyzerForm() {
           id="email"
           type="email"
           placeholder="your@email.com"
+          maxLength={200}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="input"
@@ -178,6 +218,10 @@ export default function AnalyzerForm() {
             ? "Analyzing..."
             : "Analyze Doorpost"}
         </button>
+        <TurnstileWidget
+          onVerify={setTurnstileToken}
+          resetKey={turnstileReset}
+        />
         <div style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
           We only analyze above-the-fold content and do not store login
           credentials or user sessions.

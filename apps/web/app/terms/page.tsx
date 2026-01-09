@@ -1,7 +1,18 @@
+import type { Metadata } from "next";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 
+export const metadata: Metadata = {
+  title: "Terms of Service — TheDoorpost",
+  description:
+    "Terms governing the use of TheDoorpost above-the-fold analysis services.",
+  alternates: {
+    canonical: "/terms",
+  },
+};
+
 export default function TermsPage() {
+  const lastUpdated = "January 8, 2026";
   return (
     <main>
       <Navbar />
@@ -10,12 +21,7 @@ export default function TermsPage() {
           Terms of Service
         </h1>
         <p style={{ color: "var(--muted)", marginBottom: 32 }}>
-          Last updated:{" "}
-          {new Date().toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
+          Last updated: {lastUpdated}
         </p>
 
         <div className="card">

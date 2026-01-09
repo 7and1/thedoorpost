@@ -4,11 +4,13 @@ node_modules
 wrangler.local-state
 .wrangler
 .dev.vars
+.env
 .env.local
 .env.*.local
 .DS_Store
 *.log
+package-lock.json
 
-# Security: wrangler config files (use .example templates)
-apps/worker/wrangler.toml
-apps/web/wrangler.jsonc
+# Security - never commit
+CLAUDE.md
+/docs

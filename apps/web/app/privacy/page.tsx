@@ -1,19 +1,25 @@
+import type { Metadata } from "next";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 
+export const metadata: Metadata = {
+  title: "Privacy Policy — TheDoorpost",
+  description:
+    "How TheDoorpost collects, uses, and protects data for above-the-fold analysis.",
+  alternates: {
+    canonical: "/privacy",
+  },
+};
+
 export default function PrivacyPage() {
+  const lastUpdated = "January 8, 2026";
   return (
     <main>
       <Navbar />
       <section className="section">
         <h1 style={{ fontSize: "2.4rem", marginBottom: 12 }}>Privacy Policy</h1>
         <p style={{ color: "var(--muted)", marginBottom: 32 }}>
-          Last updated:{" "}
-          {new Date().toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
+          Last updated: {lastUpdated}
         </p>
 
         <div className="card">

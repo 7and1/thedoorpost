@@ -1,6 +1,16 @@
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import AnalyzerForm from "../../components/AnalyzerForm";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Analyze Above-the-Fold — TheDoorpost",
+  description:
+    "Run a fast above-the-fold audit and get instant CRO scores, screenshots, and fixes.",
+  alternates: {
+    canonical: "/analyze",
+  },
+};
 
 export default function AnalyzePage() {
   return (
