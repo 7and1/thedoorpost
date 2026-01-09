@@ -29,6 +29,9 @@ jobs:
       - name: Build OpenNext
         run: npx opennextjs-cloudflare build
 
+      - name: Prepare for Pages deploy
+        run: mv .open-next/worker.js .open-next/_worker.js
+
       - name: Deploy to Cloudflare Pages
         run: npx wrangler pages deploy .open-next --project-name thedoorpost-web --commit-dirty=true
         env:
