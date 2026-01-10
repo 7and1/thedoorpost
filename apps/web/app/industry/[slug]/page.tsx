@@ -18,9 +18,15 @@ export async function generateMetadata({
   if (!industry) return { title: "Industry not found" };
   return {
     title: `${industry.title} — TheDoorpost`,
-    description: `Optimize above-the-fold performance for ${industry.title.toLowerCase()}.`,
+    description: `Optimize above-the-fold performance for ${industry.title.toLowerCase()}. Industry-specific CRO insights and hero section analysis.`,
     alternates: {
       canonical: `/industry/${industry.slug}`,
+    },
+    openGraph: {
+      title: `${industry.title} Landing Page Analyzer — TheDoorpost`,
+      description: `Optimize above-the-fold performance for ${industry.title.toLowerCase()}.`,
+      url: `https://thedoorpost.com/industry/${industry.slug}`,
+      type: "website",
     },
   };
 }

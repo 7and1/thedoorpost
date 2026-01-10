@@ -15,7 +15,10 @@ export async function verifyTurnstile(
   remoteIp?: string | null,
 ) {
   if (env.TURNSTILE_SKIP_VERIFY === "true") return true;
-  if (!env.TURNSTILE_SECRET) return true;
+  if (!env.TURNSTILE_SECRET) {
+    console.error("[SECURITY] TURNSTILE_SECRET not configured");
+    return false; // Fail closed instead of returning true
+  }
   if (!token) return false;
 
   const formData = new FormData();

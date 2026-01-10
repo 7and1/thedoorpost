@@ -32,6 +32,21 @@ export class MockD1 implements D1Database {
   }
 }
 
+export interface MockQueue {
+  send: (message: unknown) => Promise<void>;
+  messages: unknown[];
+}
+
+export function createMockQueue(): MockQueue {
+  const messages: unknown[] = [];
+  return {
+    messages,
+    send: async (message: unknown) => {
+      messages.push(message);
+    },
+  };
+}
+
 export function createMockEnv(overrides: Partial<Env> = {}): Env {
   return {
     MYBROWSER: {} as any,
@@ -40,6 +55,7 @@ export function createMockEnv(overrides: Partial<Env> = {}): Env {
     } as R2Bucket,
     DB: new MockD1(),
     KV: new MemoryKV(),
+    JOBS_QUEUE: createMockQueue() as unknown as Queue,
     OPENAI_API_KEY: "test",
     OPENAI_MODEL: "gpt-4o",
     R2_PUBLIC_BASE_URL: "https://r2.example.com",
@@ -48,6 +64,8 @@ export function createMockEnv(overrides: Partial<Env> = {}): Env {
     ENABLE_DOH_CHECK: "false",
     OPENAI_STREAM: "false",
     MOCK_ANALYZE: "true",
+    API_KEY: "test-api-key",
+    TURNSTILE_SKIP_VERIFY: "true",
     ...overrides,
   };
 }

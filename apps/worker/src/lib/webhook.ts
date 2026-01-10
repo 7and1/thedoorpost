@@ -88,3 +88,22 @@ export async function sendWebhook(
   }
   return false;
 }
+
+export async function sendWebhookWithDLQ(
+  env: Env,
+  jobId: string,
+  url: string,
+  payload: WebhookPayload,
+  secret?: string,
+): Promise<boolean> {
+  const ok = await sendWebhook(env, url, payload, secret);
+  if (!ok) {
+    console.warn(`[WEBHOOK] Delivery failed for job ${jobId}`);
+    await env.KV.put(
+      `dlq:webhook:${jobId}`,
+      JSON.stringify({ url, payload, failedAt: Date.now() }),
+      { expirationTtl: 604800 },
+    );
+  }
+  return ok;
+}

@@ -1,6 +1,32 @@
+import type { Metadata } from "next";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import AnalyzerForm from "../components/AnalyzerForm";
+
+export const metadata: Metadata = {
+  title: "TheDoorpost — Free Above-the-Fold Analyzer | CRO Tool",
+  description:
+    "Analyze your landing page hero section in 30 seconds. Get instant CRO scores, screenshots, and actionable fixes. Free tool for marketers and designers.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "TheDoorpost — Free Above-the-Fold Analyzer",
+    description:
+      "Score your hero section and get actionable CRO fixes in seconds.",
+    url: "https://thedoorpost.com",
+    siteName: "TheDoorpost",
+    images: [{ url: "/og.png", width: 1200, height: 630 }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "TheDoorpost — Free Above-the-Fold Analyzer",
+    description:
+      "Score your hero section and get actionable CRO fixes in seconds.",
+    images: ["/og.png"],
+  },
+};
 
 export default function HomePage() {
   return (

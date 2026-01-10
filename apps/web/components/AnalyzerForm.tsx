@@ -252,6 +252,8 @@ export default function AnalyzerForm() {
 
       {status === "error" && error && (
         <div
+          role="alert"
+          aria-live="assertive"
           className="card"
           style={{ borderColor: "#f87171", color: "#7f1d1d" }}
         >

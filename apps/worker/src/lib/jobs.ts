@@ -64,5 +64,11 @@ export async function failJob(env: Env, id: string, message: string) {
 export async function getJob(env: Env, id: string): Promise<JobStatus | null> {
   const raw = await env.KV.get(jobKey(id));
   if (!raw) return null;
-  return JSON.parse(raw) as JobStatus;
+  try {
+    return JSON.parse(raw) as JobStatus;
+  } catch {
+    console.error(`[JOBS] Corrupted job data for ${id}, cleaning up`);
+    await env.KV.delete(jobKey(id));
+    return null;
+  }
 }

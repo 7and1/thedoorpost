@@ -85,10 +85,14 @@ export default function ContactForm() {
     <div className="card">
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: 20 }}>
-          <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>
+          <label
+            htmlFor="contact-name"
+            style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
+          >
             Name
           </label>
           <input
+            id="contact-name"
             type="text"
             className="input"
             placeholder="Your name"
@@ -100,10 +104,14 @@ export default function ContactForm() {
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>
+          <label
+            htmlFor="contact-email"
+            style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
+          >
             Email
           </label>
           <input
+            id="contact-email"
             type="email"
             className="input"
             placeholder="you@example.com"
@@ -115,10 +123,14 @@ export default function ContactForm() {
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>
+          <label
+            htmlFor="contact-subject"
+            style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
+          >
             Subject
           </label>
           <select
+            id="contact-subject"
             className="input"
             value={subject}
             onChange={(event) => setSubject(event.target.value)}
@@ -131,10 +143,14 @@ export default function ContactForm() {
         </div>
 
         <div style={{ marginBottom: 24 }}>
-          <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>
+          <label
+            htmlFor="contact-message"
+            style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
+          >
             Message
           </label>
           <textarea
+            id="contact-message"
             className="input"
             rows={5}
             placeholder="How can we help you?"

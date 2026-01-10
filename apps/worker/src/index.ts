@@ -19,7 +19,8 @@ import { getBestReports, getCommonMistakes } from "./lib/aggregates";
 import { rateLimit } from "./lib/rate-limit";
 import { buildReportCsv, buildReportPdf } from "./lib/export";
 import { verifyTurnstile } from "./lib/turnstile";
-import { sendWebhook } from "./lib/webhook";
+import { sendWebhookWithDLQ } from "./lib/webhook";
+import { isValidUUID } from "./lib/validation";
 import type { ReportData, ReportResult } from "@thedoorpost/shared";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -78,8 +79,8 @@ app.use("/api/*", async (c, next) => {
   const expectedKey = c.env.API_KEY;
 
   if (!expectedKey) {
-    // API_KEY not configured, allow requests (should be set in production)
-    return next();
+    console.error("[SECURITY] API_KEY not configured - rejecting request");
+    return c.json({ error: ErrorMessages.SERVER_ERROR }, 500);
   }
 
   if (!apiKey || apiKey !== expectedKey) {
@@ -107,17 +108,23 @@ app.use("*", async (c, next) => {
   await next();
 });
 
-// CORS middleware - uses wildcard origin since origin validation
-// is already handled by the middleware above (lines 93-108).
-// The origin validation middleware rejects unauthorized origins with 403
-// before CORS headers are even applied.
-app.use(
-  "*",
-  cors({
-    origin: "*",
+// CORS middleware with dynamic origin validation
+app.use("*", async (c, next) => {
+  const allowedHostnames = getAllowedHostnames(c.env);
+  const corsMiddleware = cors({
+    origin: (origin) => {
+      if (!origin) return "*";
+      try {
+        const hostname = new URL(origin).hostname;
+        return allowedHostnames.has(hostname) ? origin : undefined;
+      } catch {
+        return undefined;
+      }
+    },
     credentials: true,
-  }),
-);
+  });
+  return corsMiddleware(c, next);
+});
 
 const analyzeSchema = z
   .object({
@@ -374,19 +381,13 @@ async function processJob(
           report: result,
           timings,
         };
-        const ok = await sendWebhook(env, webhookUrl, payload, webhookSecret);
-        if (!ok) {
-          console.warn(`[WEBHOOK] Delivery failed for job ${jobId}`);
-          await env.KV.put(
-            `dlq:webhook:${jobId}`,
-            JSON.stringify({
-              url: webhookUrl,
-              payload,
-              failedAt: Date.now(),
-            }),
-            { expirationTtl: 604800 },
-          );
-        }
+        await sendWebhookWithDLQ(
+          env,
+          jobId,
+          webhookUrl,
+          payload,
+          webhookSecret,
+        );
       }
       return;
     }
@@ -472,19 +473,7 @@ async function processJob(
         report: result,
         timings,
       };
-      const ok = await sendWebhook(env, webhookUrl, payload, webhookSecret);
-      if (!ok) {
-        console.warn(`[WEBHOOK] Delivery failed for job ${jobId}`);
-        await env.KV.put(
-          `dlq:webhook:${jobId}`,
-          JSON.stringify({
-            url: webhookUrl,
-            payload,
-            failedAt: Date.now(),
-          }),
-          { expirationTtl: 604800 },
-        );
-      }
+      await sendWebhookWithDLQ(env, jobId, webhookUrl, payload, webhookSecret);
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
@@ -509,19 +498,7 @@ async function processJob(
         error: message,
         timings,
       };
-      const ok = await sendWebhook(env, webhookUrl, payload, webhookSecret);
-      if (!ok) {
-        console.warn(`[WEBHOOK] Delivery failed for job ${jobId}`);
-        await env.KV.put(
-          `dlq:webhook:${jobId}`,
-          JSON.stringify({
-            url: webhookUrl,
-            payload,
-            failedAt: Date.now(),
-          }),
-          { expirationTtl: 604800 },
-        );
-      }
+      await sendWebhookWithDLQ(env, jobId, webhookUrl, payload, webhookSecret);
     }
   }
 }
@@ -671,17 +648,29 @@ app.post("/api/contact", async (c) => {
 });
 
 app.get("/api/jobs/:id", async (c) => {
-  const job = await getJob(c.env, c.req.param("id"));
+  const id = c.req.param("id");
+  if (!isValidUUID(id)) {
+    return c.json({ error: "Invalid job ID" }, 400);
+  }
+  const job = await getJob(c.env, id);
   if (!job) return c.json({ error: ErrorMessages.JOB_NOT_FOUND }, 404);
   return c.json(job);
 });
 
 app.get("/api/jobs/:id/stream", (c) => {
-  return streamJob(c.env, c.req.param("id"));
+  const id = c.req.param("id");
+  if (!isValidUUID(id)) {
+    return c.json({ error: "Invalid job ID" }, 400);
+  }
+  const origin = c.req.header("Origin");
+  return streamJob(c.env, id, origin);
 });
 
 app.get("/api/reports/:id", async (c) => {
   const id = c.req.param("id");
+  if (!isValidUUID(id)) {
+    return c.json({ error: "Invalid report ID" }, 400);
+  }
   const data = await fetchReportResult(c.env, id);
   if (!data) return c.json({ error: ErrorMessages.NOT_FOUND }, 404);
   return c.json(data.result, 200, {
@@ -691,6 +680,9 @@ app.get("/api/reports/:id", async (c) => {
 
 app.get("/api/reports/:id/export.csv", async (c) => {
   const id = c.req.param("id");
+  if (!isValidUUID(id)) {
+    return c.json({ error: "Invalid report ID" }, 400);
+  }
   const data = await fetchReportResult(c.env, id, true);
   if (!data) return c.json({ error: ErrorMessages.NOT_FOUND }, 404);
   const csv = buildReportCsv(data.result, data.sourceUrl);
@@ -705,6 +697,9 @@ app.get("/api/reports/:id/export.csv", async (c) => {
 
 app.get("/api/reports/:id/export.pdf", async (c) => {
   const id = c.req.param("id");
+  if (!isValidUUID(id)) {
+    return c.json({ error: "Invalid report ID" }, 400);
+  }
   const data = await fetchReportResult(c.env, id, true);
   if (!data) return c.json({ error: ErrorMessages.NOT_FOUND }, 404);
   const pdfBytes = await buildReportPdf(data.result);

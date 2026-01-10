@@ -32,7 +32,7 @@ export default function FeedbackButtons() {
               : {}),
           }}
         >
-          {feedback === "helpful" ? "" : ""}
+          {feedback === "helpful" ? "Thanks!" : "Helpful"}
         </button>
         <button
           onClick={() => handleFeedback("not-helpful")}
@@ -45,7 +45,7 @@ export default function FeedbackButtons() {
               : {}),
           }}
         >
-          {feedback === "not-helpful" ? "" : ""}
+          {feedback === "not-helpful" ? "Thanks!" : "Not Helpful"}
         </button>
       </div>
       {feedback && (

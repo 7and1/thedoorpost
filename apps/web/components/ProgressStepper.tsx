@@ -29,7 +29,14 @@ export default function ProgressStepper({
         </span>
       </div>
       <div style={{ marginTop: 12 }} className="progress">
-        <div style={{ width: `${progress}%` }} />
+        <div
+          role="progressbar"
+          aria-valuenow={progress}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`Analysis progress: ${progress}%`}
+          style={{ width: `${progress}%` }}
+        />
       </div>
       <div style={{ marginTop: 16, display: "grid", gap: 8 }}>
         {steps.map((step) => (

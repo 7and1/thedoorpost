@@ -15,9 +15,25 @@ export default function sitemap() {
     "/privacy",
     "/terms",
   ];
+
+  const priorityMap: Record<string, number> = {
+    "/": 1.0,
+    "/analyze": 0.9,
+    "/pricing": 0.8,
+    "/blog": 0.7,
+    "/best-landing-pages": 0.6,
+    "/common-mistakes": 0.6,
+    "/contact": 0.5,
+    "/privacy": 0.3,
+    "/terms": 0.3,
+  };
+
   const routes = staticRoutes.map((path) => ({
     url: `${base}${path}`,
     lastModified: new Date(),
+    changeFrequency:
+      path === "" || path === "/blog" ? "daily" : ("weekly" as const),
+    priority: priorityMap[path === "" ? "/" : path] ?? 0.5,
   }));
 
   const blogRoutes = posts.map((post) => ({

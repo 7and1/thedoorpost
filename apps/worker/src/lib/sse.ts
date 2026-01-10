@@ -21,7 +21,7 @@ function sleep(ms: number) {
  * - Immediate cleanup on client disconnect
  * - Backpressure handling via desiredSize check
  */
-export function streamJob(env: Env, id: string) {
+export function streamJob(env: Env, id: string, origin?: string) {
   let active = true;
   let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
@@ -128,7 +128,7 @@ export function streamJob(env: Env, id: string) {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
       Connection: "keep-alive",
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin": origin || "*",
       "X-Accel-Buffering": "no", // Disable nginx buffering
     },
   });

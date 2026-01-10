@@ -84,6 +84,8 @@ export default async function BestLandingPages() {
                 <div style={{ color: "var(--muted)" }}>{item.summary}</div>
                 <a
                   href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{ fontSize: "0.9rem", color: "var(--primary)" }}
                 >
                   Visit site

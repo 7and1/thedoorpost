@@ -52,6 +52,15 @@ function isIpv6(ip: string): boolean {
 
 function isPrivateIpv6(ip: string): boolean {
   if (IPV6_BLOCKED.has(ip)) return true;
+
+  // Check for IPv4-mapped IPv6 (::ffff:x.x.x.x)
+  const ipv4MappedMatch = ip.match(
+    /^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/i,
+  );
+  if (ipv4MappedMatch) {
+    return isPrivateIpv4(ipv4MappedMatch[1]);
+  }
+
   const normalized = ip.replace(/^:/, "").toLowerCase();
   const prefix2 = normalized.slice(0, 2);
   const prefix4 = normalized.slice(0, 4);

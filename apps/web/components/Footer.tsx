@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer() {
   return (
     <footer>
@@ -14,8 +16,8 @@ export default function Footer() {
           <div>Above-the-fold CRO analyzer.</div>
         </div>
         <div style={{ display: "flex", gap: 16 }}>
-          <a href="/privacy">Privacy</a>
-          <a href="/terms">Terms</a>
+          <Link href="/privacy">Privacy</Link>
+          <Link href="/terms">Terms</Link>
           <a href="mailto:hello@thedoorpost.com">Contact</a>
         </div>
       </div>

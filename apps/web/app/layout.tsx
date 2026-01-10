@@ -23,14 +23,14 @@ export const metadata: Metadata = {
     description: "Score your hero section and get actionable CRO fixes.",
     url: "https://thedoorpost.com",
     siteName: "TheDoorpost",
-    images: [{ url: "/og.svg", width: 1200, height: 630 }],
+    images: [{ url: "/og.png", width: 1200, height: 630 }],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "TheDoorpost — Above-the-Fold Analyzer",
     description: "Score your hero section and get actionable CRO fixes.",
-    images: ["/og.svg"],
+    images: ["/og.png"],
   },
 };
 
@@ -77,6 +77,7 @@ export default function RootLayout({
           "@type": "Offer",
           url: "https://thedoorpost.com/pricing",
           priceCurrency: "USD",
+          price: "0",
           availability: "https://schema.org/InStock",
         },
       },

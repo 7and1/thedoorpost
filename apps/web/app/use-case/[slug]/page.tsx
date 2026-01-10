@@ -18,9 +18,15 @@ export async function generateMetadata({
   if (!useCase) return { title: "Use case not found" };
   return {
     title: `${useCase.title} — TheDoorpost`,
-    description: `Above-the-fold insights for ${useCase.title.toLowerCase()}.`,
+    description: `Above-the-fold insights for ${useCase.title.toLowerCase()}. Optimize your hero section for better conversions.`,
     alternates: {
       canonical: `/use-case/${useCase.slug}`,
+    },
+    openGraph: {
+      title: `${useCase.title} — TheDoorpost`,
+      description: `Above-the-fold insights for ${useCase.title.toLowerCase()}.`,
+      url: `https://thedoorpost.com/use-case/${useCase.slug}`,
+      type: "website",
     },
   };
 }
