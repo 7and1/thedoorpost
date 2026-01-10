@@ -8,6 +8,9 @@ Request JSON
 
 - url: string (required)
 - userEmail: string (optional)
+- turnstileToken: string (optional if Turnstile disabled)
+- webhook_url: string (optional, https)
+- webhook_secret: string (optional, used to sign callbacks)
 
 Response JSON (cache hit)
 
@@ -26,9 +29,11 @@ Response JSON (cache miss)
 Behaviors
 
 - Validate URL scheme (https/http), block private IPs.
+- Validate webhook URL (https only).
 - Rate limit by IP and email.
 - Check KV cache. If cached, return complete report immediately.
 - If not cached, enqueue job in KV and return job_id.
+- Optional webhook callback on completion/error.
 
 ### GET /api/jobs/:id
 
@@ -53,6 +58,33 @@ SSE endpoint
 
 - Returns stored report from KV (preferred) or D1.
 - Cached at edge (Cache-Control: public, max-age=3600).
+
+### GET /api/reports/:id/export.csv
+
+- Returns CSV export of the report.
+
+### GET /api/reports/:id/export.pdf
+
+- Returns PDF export of the report.
+
+### POST /api/contact
+
+Request JSON
+
+- name: string (required)
+- email: string (required)
+- subject: string (required)
+- message: string (required)
+- turnstileToken: string (optional if Turnstile disabled)
+
+Response JSON
+
+- success: true
+
+Behaviors
+
+- Rate limit by IP (default 5/hour).
+- Store message in D1 `contact_messages`.
 
 ## Browser Rendering Flow (Serverless)
 
@@ -86,3 +118,8 @@ SSE endpoint
 - Store final report JSON in KV by url hash.
 - TTL default 48h; extend for paid plan.
 - Store job status in KV (TTL 1h).
+
+## Webhooks
+
+- POST payload with `event` ("analysis.complete" | "analysis.error") to webhook_url.
+- Signed with `x-doorpost-signature: sha256=...` when webhook_secret is provided.

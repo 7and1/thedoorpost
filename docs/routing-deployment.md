@@ -40,6 +40,8 @@ OpenNext incremental cache (R2)
 - D1 database binding
 - R2 bucket binding
 - KV namespace binding
+- Queue binding (`JOBS_QUEUE`)
+- Durable Object binding (`RATE_LIMITER`)
 - NEXT_PUBLIC_API_BASE (frontend build-time and Worker vars)
 
 ## CI/CD

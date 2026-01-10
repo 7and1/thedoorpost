@@ -56,7 +56,10 @@ describe("analyze flow", () => {
       ctx as any,
     );
 
-    const job = (await jobRes.json()) as { status: string; result?: { data?: { overall_score?: number } } };
+    const job = (await jobRes.json()) as {
+      status: string;
+      result?: { data?: { overall_score?: number } };
+    };
     expect(job.status).toBe("complete");
     expect(job.result?.data?.overall_score).toBeDefined();
   });

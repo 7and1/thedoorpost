@@ -18,6 +18,24 @@ Indexes
 - idx_url
 - idx_created_at
 
+## D1 Schema (contact_messages)
+
+Fields
+
+- id (TEXT, PK)
+- name (TEXT, NOT NULL)
+- email (TEXT, NOT NULL)
+- subject (TEXT, NOT NULL)
+- message (TEXT, NOT NULL)
+- created_at (INTEGER, epoch ms)
+- ip (TEXT, optional)
+- user_agent (TEXT, optional)
+- referrer (TEXT, optional)
+
+Indexes
+
+- idx_contact_created_at
+
 ## KV Keys
 
 - report:by_url:{sha256(url)} -> cached report JSON (TTL 24-72h)

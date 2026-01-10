@@ -19,6 +19,8 @@ Cloudflare Worker Gateway
 
 - Frontend App (OpenNext): public marketing + report UI + submission form.
 - Worker Gateway: API surface, cache, validation, storage writes.
+- Queue Processor: Cloudflare Queues for async analysis jobs.
+- Rate Limiter: Durable Objects for strict per-key limits.
 - Browser Rendering: serverless screenshot engine inside Workers.
 - D1: authoritative report metadata store.
 - R2: screenshot storage, served via public bucket domain.
@@ -45,6 +47,7 @@ Cloudflare Worker Gateway
 ## Security Boundaries
 
 - Worker validates URLs, blocks private IP ranges, prevents SSRF.
+- Turnstile protects /api/analyze and /api/contact when enabled.
 - R2 bucket read-only public access for images; write only via Worker.
 
 ## Optional VPS Mode (Only if required)

@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "preview": "opennextjs-cloudflare build && cp -r .open-next/assets/* .open-next/ && mv .open-next/worker.js .open-next/_worker.js 2>/dev/null || true && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && cp -r .open-next/assets/* .open-next/ && mv .open-next/worker.js .open-next/_worker.js 2>/dev/null || true && opennextjs-cloudflare deploy",
+    "preview": "opennextjs-cloudflare build && cp -r .open-next/assets/* .open-next/ && mv .open-next/worker.js .open-next/_worker.js 2>/dev/null || true && cp public/_routes.json .open-next/ && wrangler pages dev .open-next",
+    "deploy": "opennextjs-cloudflare build && cp -r .open-next/assets/* .open-next/ && mv .open-next/worker.js .open-next/_worker.js 2>/dev/null || true && cp public/_routes.json .open-next/ && wrangler pages deploy .open-next --project-name thedoorpost-web",
     "start": "next start",
     "test:e2e": "playwright test",
     "test": "vitest run",

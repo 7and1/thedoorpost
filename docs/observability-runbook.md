@@ -10,6 +10,7 @@
 - Request count, latency, error rate.
 - OpenAI API latency and failures.
 - Cache hit ratio (KV + edge cache).
+- Job timing logs: render_ms, ai_ms, storage_ms, total_ms.
 
 ## Alerts
 
@@ -25,3 +26,5 @@
   - Switch model or degrade gracefully.
 - Incident: D1 downtime
   - Serve cached reports, retry background writes.
+- Incident: Queue backlog
+  - Inspect queue depth, scale consumers, reduce max batch size if needed.

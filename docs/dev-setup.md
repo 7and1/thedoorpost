@@ -10,6 +10,8 @@
 
 - Create `.dev.vars` for local env values.
 - Run `wrangler dev` for the worker.
+- Set `TURNSTILE_SKIP_VERIFY=true` for local testing (or provide TURNSTILE_SECRET).
+- Create Queue + Durable Object bindings in `wrangler.toml` before dev.
 
 ## Local Frontend
 

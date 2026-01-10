@@ -11,8 +11,12 @@
 
 ## Rate Limiting
 
-- Per-IP and per-email limits in KV.
+- Per-IP and per-email limits enforced via Durable Objects.
 - Additional WAF rules at Cloudflare.
+
+## Bot Protection
+
+- Turnstile verification for /api/analyze and /api/contact.
 
 ## Secrets Management
 

@@ -11,11 +11,15 @@
 ## Step 2: Worker Gateway (Core)
 
 - Create `wrangler.toml` with bindings for D1, R2, KV, and vars.
+- Add Durable Object binding for strict rate limiting.
+- Add Cloudflare Queue binding for async jobs.
 - Implement API routes:
   - POST /api/analyze
   - GET /api/jobs/:id
   - GET /api/jobs/:id/stream (SSE)
   - GET /api/reports/:id
+- Add export endpoints for CSV/PDF and webhook callbacks.
+- Protect POST routes with Turnstile if enabled.
 - Add URL validator and SSRF protection.
 - Add rate limiter using KV.
 - Add cache lookup using KV.
@@ -52,6 +56,7 @@
 
 - Configure error tracking.
 - Add health endpoints.
+- Emit timing logs for render/AI/storage durations.
 - Create uptime checks.
 
 ## Step 8: Launch
