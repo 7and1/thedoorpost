@@ -31,6 +31,4 @@ CREATE TABLE IF NOT EXISTS usage_logs (
 CREATE INDEX IF NOT EXISTS idx_usage_user_id ON usage_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_usage_created_at ON usage_logs(created_at);
 
--- Link reports to users (optional)
-ALTER TABLE reports ADD COLUMN user_id TEXT REFERENCES users(id);
-CREATE INDEX IF NOT EXISTS idx_reports_user_id ON reports(user_id);
+-- Note: user_id column already exists in reports table, skipping ALTER TABLE
