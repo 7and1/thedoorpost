@@ -19,38 +19,32 @@ function sleep(ms: number): Promise<void> {
 }
 
 async function fetchWithRetry(
-  url: string,
-  options: RequestInit,
+  fetchFn: () => Promise<Response>,
   maxRetries = 3,
-  timeoutMs = 20000,
 ): Promise<Response> {
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     // Check circuit breaker
     if (Date.now() < circuitOpenUntil) {
-      throw new Error("OpenAI circuit breaker is open");
+      throw new Error("AI circuit breaker is open");
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
     try {
-      const res = await fetch(url, { ...options, signal: controller.signal });
-      clearTimeout(timeoutId);
+      const res = await fetchFn();
 
       // Handle rate limiting (429) specifically
       if (res.status === 429) {
         const retryAfter = res.headers.get("Retry-After");
         const delayMs = retryAfter
           ? parseInt(retryAfter, 10) * 1000
-          : Math.pow(2, attempt) * 1000 + Math.random() * 1000; // exponential backoff with jitter
+          : Math.pow(2, attempt) * 1000 + Math.random() * 1000;
 
         console.warn(
-          `[OPENAI] Rate limited, retry after ${delayMs}ms (attempt ${attempt + 1}/${maxRetries})`,
+          `[AI] Rate limited, retry after ${delayMs}ms (attempt ${attempt + 1}/${maxRetries})`,
         );
         if (attempt < maxRetries - 1) {
-          await sleep(Math.min(delayMs, 10000)); // Cap at 10s
+          await sleep(Math.min(delayMs, 10000));
           continue;
         }
       }
@@ -61,9 +55,9 @@ async function fetchWithRetry(
         return res;
       }
 
-      lastError = new Error(`OpenAI error: ${res.status}`);
+      lastError = new Error(`AI error: ${res.status}`);
       console.error(
-        `[OPENAI] Request failed (attempt ${attempt + 1}/${maxRetries}): ${res.status}`,
+        `[AI] Request failed (attempt ${attempt + 1}/${maxRetries}): ${res.status}`,
       );
 
       // Don't retry client errors (4xx except 429)
@@ -77,10 +71,9 @@ async function fetchWithRetry(
         await sleep(delayMs);
       }
     } catch (err) {
-      clearTimeout(timeoutId);
       lastError = err instanceof Error ? err : new Error("Unknown fetch error");
       console.error(
-        `[OPENAI] Fetch error (attempt ${attempt + 1}/${maxRetries}):`,
+        `[AI] Fetch error (attempt ${attempt + 1}/${maxRetries}):`,
         lastError,
       );
 
@@ -96,11 +89,11 @@ async function fetchWithRetry(
   if (failureCount >= CIRCUIT_THRESHOLD) {
     circuitOpenUntil = Date.now() + CIRCUIT_TIMEOUT;
     console.error(
-      `[OPENAI] Circuit breaker opened until ${new Date(circuitOpenUntil).toISOString()}`,
+      `[AI] Circuit breaker opened until ${new Date(circuitOpenUntil).toISOString()}`,
     );
   }
 
-  throw lastError || new Error("OpenAI request failed after retries");
+  throw lastError || new Error("AI request failed after retries");
 }
 
 export async function analyzeScreenshot(
@@ -109,116 +102,56 @@ export async function analyzeScreenshot(
   onPartialScore?: (score: number) => Promise<void> | void,
   mimeType: "image/webp" | "image/png" = "image/webp",
 ): Promise<ReportData> {
-  const model = env.OPENAI_MODEL || "gpt-4o";
-  const stream = env.OPENAI_STREAM === "true";
-  const timeoutMs = Number(env.OPENAI_TIMEOUT_MS || 20000);
-  const timeout =
-    Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 20000;
+  const model = env.AI_MODEL || "@cf/meta/llama-3.3-70b-vision";
   const imageMime = mimeType === "image/png" ? "image/png" : "image/webp";
 
-  const payload = {
-    model,
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      {
-        role: "user",
-        content: [
-          { type: "text", text: USER_PROMPT },
-          {
-            type: "image_url",
-            image_url: { url: `data:${imageMime};base64,${imageBase64}` },
-          },
-        ],
-      },
-    ],
-    response_format: { type: "json_object" },
-    temperature: 0.2,
-    max_tokens: 900,
-    stream,
-  };
+  // Remove data URL prefix if present
+  const base64Data = imageBase64.includes(",")
+    ? imageBase64.split(",")[1]
+    : imageBase64;
 
-  const res = await fetchWithRetry(
-    "https://api.openai.com/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    },
-    3,
-    timeout,
-  );
+  const prompt = `${SYSTEM_PROMPT}\n\n${USER_PROMPT}`;
 
-  if (!res.body) {
-    throw new Error("OpenAI response body is empty");
+  const res = await fetchWithRetry(async () => {
+    const response = await env.AI.run(model, {
+      image: Array.from(Buffer.from(base64Data, "base64")),
+      prompt,
+      max_tokens: 900,
+      temperature: 0.2,
+    });
+    // Workers AI returns the result directly, not a Response object
+    return new Response(JSON.stringify(response), {
+      headers: { "Content-Type": "application/json" },
+    }) as Response;
+  });
+
+  const data = await res.json();
+
+  // Workers AI returns the text directly
+  let content: string;
+  if (typeof data === "string") {
+    content = data;
+  } else if (data.response) {
+    content = data.response;
+  } else if (data.output) {
+    content = data.output;
+  } else {
+    content = JSON.stringify(data);
   }
 
-  if (!stream) {
-    const data = (await res.json()) as {
-      choices: Array<{ message: { content: string } }>;
-    };
-    try {
-      return parseReportData(JSON.parse(data.choices[0].message.content));
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Invalid OpenAI JSON response";
-      throw new Error(`OpenAI response parse failed: ${message}`);
-    }
-  }
+  // Extract JSON from the response
+  const jsonStart = content.indexOf("{");
+  const jsonEnd = content.lastIndexOf("}");
+  const jsonStr =
+    jsonStart >= 0 ? content.slice(jsonStart, jsonEnd + 1) : content;
 
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let sse = "";
-  let partialScoreEmitted = false;
-
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    sse += decoder.decode(value, { stream: true });
-    const lines = sse.split("\n");
-    sse = lines.pop() || "";
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed.startsWith("data:")) continue;
-      const data = trimmed.replace(/^data:\s*/, "");
-      if (data === "[DONE]") {
-        break;
-      }
-      try {
-        const chunk = JSON.parse(data) as {
-          choices: Array<{ delta?: { content?: string } }>;
-        };
-        const delta = chunk.choices?.[0]?.delta?.content;
-        if (delta) {
-          buffer += delta;
-          if (!partialScoreEmitted) {
-            const match = buffer.match(/"overall_score"\s*:\s*(\d{1,3})/);
-            if (match) {
-              partialScoreEmitted = true;
-              const score = Number(match[1]);
-              if (Number.isFinite(score)) {
-                await onPartialScore?.(score);
-              }
-            }
-          }
-        }
-      } catch {
-        // ignore malformed chunk
-      }
-    }
-  }
-
-  const jsonStart = buffer.indexOf("{");
-  const jsonEnd = buffer.lastIndexOf("}");
-  const json = jsonStart >= 0 ? buffer.slice(jsonStart, jsonEnd + 1) : buffer;
   try {
-    return parseReportData(JSON.parse(json));
+    return parseReportData(JSON.parse(jsonStr));
   } catch (err) {
     const message =
-      err instanceof Error ? err.message : "Invalid OpenAI JSON response";
-    throw new Error(`OpenAI response parse failed: ${message}`);
+      err instanceof Error ? err.message : "Invalid AI JSON response";
+    throw new Error(
+      `AI response parse failed: ${message}\nRaw: ${jsonStr.slice(0, 200)}`,
+    );
   }
 }

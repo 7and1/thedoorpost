@@ -7,6 +7,10 @@ compatibility_flags = ["nodejs_compat"]
 [browser]
 binding = "MYBROWSER"
 
+# AI binding for Workers AI
+[ai]
+binding = "AI"
+
 # R2 bucket
 [[r2_buckets]]
 binding = "MY_BUCKET"
@@ -44,13 +48,12 @@ max_batch_size = 5
 max_batch_timeout = 30
 
 [vars]
-OPENAI_MODEL = "gpt-4o"
+AI_MODEL = "@cf/meta/llama-3.3-70b-vision"
 R2_PUBLIC_BASE_URL = "https://r2.thedoorpost.com"
 JOB_TTL_SECONDS = "3600"
 REPORT_CACHE_TTL_SECONDS = "172800"
 ENABLE_DOH_CHECK = "true"
-OPENAI_STREAM = "true"
-OPENAI_TIMEOUT_MS = "20000"
+AI_TIMEOUT_MS = "30000"
 RATE_LIMIT_IP_PER_MIN = "10"
 RATE_LIMIT_EMAIL_PER_MIN = "5"
 CONTACT_RATE_LIMIT_PER_HOUR = "5"
@@ -58,6 +61,6 @@ WEBHOOK_TIMEOUT_MS = "5000"
 WEBHOOK_MAX_RETRIES = "2"
 # GitHub OAuth - secrets set via wrangler secret
 GITHUB_CLIENT_ID = "Ov23lipDuVNewveGQONx"
-GITHUB_REDIRECT_URI = "https://doorpost-worker.7and1.workers.dev/auth/github/callback"
+GITHUB_REDIRECT_URI = "https://api.thedoorpost.com/auth/github/callback"
 SESSION_COOKIE_DOMAIN = "thedoorpost.com"
 FRONTEND_URL = "https://thedoorpost.com"

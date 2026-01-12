@@ -230,7 +230,11 @@ export const posts: Post[] = [
           "Show the best-selling product or collection with a clear value statement.",
           "If you run a promotion, make it headline-level and remove competing offers.",
         ],
-        bullets: ["Hero image highlights the product", "Offer is explicit", "CTA says what happens next"],
+        bullets: [
+          "Hero image highlights the product",
+          "Offer is explicit",
+          "CTA says what happens next",
+        ],
       },
       {
         heading: "Conversion boosters",
