@@ -14,8 +14,12 @@ type AnalyzeResponse =
   | ({ status: "complete" } & ReportResult)
   | { status: "queued"; job_id: string; stream_url: string; poll_url: string };
 
-export default function AnalyzerForm() {
-  const [url, setUrl] = useState("");
+export default function AnalyzerForm({
+  defaultUrl = "",
+}: {
+  defaultUrl?: string;
+}) {
+  const [url, setUrl] = useState(defaultUrl);
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<
     "idle" | "loading" | "queued" | "complete" | "error"

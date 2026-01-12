@@ -164,4 +164,59 @@ export const industries = [
       "Consultation CTA optimization",
     ],
   },
+  {
+    slug: "cybersecurity",
+    title: "Cybersecurity Trust-First Messaging",
+    benefits: [
+      "Highlight compliance certifications",
+      "Clarify threat coverage quickly",
+      "Emphasize response time guarantees",
+      "Show customer security proof",
+      "Reduce jargon in hero copy",
+    ],
+  },
+  {
+    slug: "nonprofit",
+    title: "Nonprofit Donation Optimization",
+    benefits: [
+      "Mission impact clarity",
+      "Donation CTA prominence",
+      "Trust and transparency signals",
+      "Recurring donor messaging",
+      "Volunteer sign-up visibility",
+    ],
+  },
+  {
+    slug: "logistics",
+    title: "Logistics & Supply Chain Performance",
+    benefits: [
+      "Delivery reliability messaging",
+      "Tracking and visibility emphasis",
+      "Coverage map clarity",
+      "Cost transparency cues",
+      "Operational proof points",
+    ],
+  },
+  {
+    slug: "legal-tech",
+    title: "Legal Tech Conversion Strategy",
+    benefits: [
+      "Confidentiality assurances",
+      "Process step clarity",
+      "Client testimonial highlights",
+      "Consultation CTA alignment",
+      "Pricing expectations upfront",
+    ],
+  },
+  {
+    slug: "consumer-apps",
+    title: "Consumer App Launch Readiness",
+    benefits: [
+      "App store rating emphasis",
+      "Download CTA visibility",
+      "Feature preview hierarchy",
+      "Cross-device experience cues",
+      "Social proof placement",
+    ],
+  },
 ];

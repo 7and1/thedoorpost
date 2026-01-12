@@ -1,5 +1,6 @@
 import type { ReportData } from "@thedoorpost/shared";
 import type { Env } from "../env";
+import { parseReportData } from "./report-schema";
 
 const SYSTEM_PROMPT =
   "You are a ruthless CRO expert. Analyze the above-the-fold screenshot and return concise, actionable advice.";
@@ -159,7 +160,7 @@ export async function analyzeScreenshot(
       choices: Array<{ message: { content: string } }>;
     };
     try {
-      return JSON.parse(data.choices[0].message.content) as ReportData;
+      return parseReportData(JSON.parse(data.choices[0].message.content));
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Invalid OpenAI JSON response";
@@ -214,7 +215,7 @@ export async function analyzeScreenshot(
   const jsonEnd = buffer.lastIndexOf("}");
   const json = jsonStart >= 0 ? buffer.slice(jsonStart, jsonEnd + 1) : buffer;
   try {
-    return JSON.parse(json) as ReportData;
+    return parseReportData(JSON.parse(json));
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Invalid OpenAI JSON response";

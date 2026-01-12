@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import AnalyzerForm from "../components/AnalyzerForm";
+import PricingCTA from "../components/PricingCTA";
 
 export const metadata: Metadata = {
   title: "TheDoorpost — Free Above-the-Fold Analyzer | CRO Tool",
@@ -92,6 +93,40 @@ export default function HomePage() {
               traffic and build a content flywheel.
             </p>
           </div>
+        </div>
+      </section>
+      <section className="section">
+        <h2 style={{ fontSize: "2rem", marginBottom: 12 }}>
+          Plans built for speed
+        </h2>
+        <p style={{ color: "var(--muted)" }}>
+          Start free and upgrade when you need higher volume and longer
+          retention.
+        </p>
+        <div className="grid grid-2" style={{ marginTop: 24 }}>
+          <PricingCTA
+            plan="Starter"
+            price="$0"
+            features={[
+              "10 analyses per month",
+              "Basic reports",
+              "7-day report retention",
+            ]}
+            ctaLabel="Get Started"
+            href="/analyze"
+          />
+          <PricingCTA
+            plan="Pro"
+            price="$29/mo"
+            features={[
+              "200 analyses per month",
+              "Full reports + export",
+              "12-month report retention",
+            ]}
+            ctaLabel="View Pricing"
+            href="/pricing"
+            highlight
+          />
         </div>
       </section>
 

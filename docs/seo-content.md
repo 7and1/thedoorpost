@@ -40,6 +40,8 @@
 10. Checklist for Homepage CRO
 11. The Role of Visual Hierarchy in Conversion
 12. How to Use AI for CRO Audits
+13. The Analytics Metrics That Actually Matter
+14. Using AI to Scale CRO Audits (deep dive)
 
 ## Content Production
 

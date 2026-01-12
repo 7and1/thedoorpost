@@ -17,13 +17,13 @@ preview_bucket_name = "doorpost-snapshots-dev"
 [[d1_databases]]
 binding = "DB"
 database_name = "doorpost-db"
-database_id = "${D1_DATABASE_ID}"
+database_id = "339326be-3bf0-400a-827c-f429d365c4bd"
 
 # KV namespace - ID configured via CI/CD secrets
 [[kv_namespaces]]
 binding = "KV"
-id = "${KV_NAMESPACE_ID}"
-preview_id = "${KV_NAMESPACE_ID}"
+id = "77f1b03891bb4acda3d11765c97f9f0e"
+preview_id = "77f1b03891bb4acda3d11765c97f9f0e"
 
 [durable_objects]
 bindings = [
@@ -56,3 +56,8 @@ RATE_LIMIT_EMAIL_PER_MIN = "5"
 CONTACT_RATE_LIMIT_PER_HOUR = "5"
 WEBHOOK_TIMEOUT_MS = "5000"
 WEBHOOK_MAX_RETRIES = "2"
+# GitHub OAuth - secrets set via wrangler secret
+GITHUB_CLIENT_ID = "Ov23lipDuVNewveGQONx"
+GITHUB_REDIRECT_URI = "https://doorpost-worker.7and1.workers.dev/auth/github/callback"
+SESSION_COOKIE_DOMAIN = "thedoorpost.com"
+FRONTEND_URL = "https://thedoorpost.com"

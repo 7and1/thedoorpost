@@ -22,6 +22,22 @@ import { verifyTurnstile } from "./lib/turnstile";
 import { sendWebhookWithDLQ } from "./lib/webhook";
 import { isValidUUID } from "./lib/validation";
 import type { ReportData, ReportResult } from "@thedoorpost/shared";
+import {
+  generateOAuthState,
+  verifyAndConsumeState,
+  getGitHubAuthUrl,
+  exchangeCodeForToken,
+  fetchGitHubUser,
+  upsertUser,
+  createSession,
+  getSessionUser,
+  deleteSession,
+  parseSessionCookie,
+  buildSessionCookie,
+  buildLogoutCookie,
+  type User,
+} from "./lib/oauth";
+import { checkUserQuota, recordUsage, getUserUsageStats } from "./lib/quota";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -29,6 +45,7 @@ type AnalyzeJobMessage = {
   jobId: string;
   url: string;
   userEmail?: string;
+  userId?: string;
   webhookUrl?: string;
   webhookSecret?: string;
   requestedAt: number;
@@ -61,12 +78,25 @@ function getAllowedHostnames(env: Env) {
   return hostnames;
 }
 
+const PUBLIC_API_PREFIXES = [
+  "/api/analyze",
+  "/api/jobs/",
+  "/api/reports/",
+  "/api/aggregate/",
+  "/api/contact",
+];
+
+function isPublicApiPath(path: string) {
+  if (path === "/api/analyze" || path === "/api/contact") return true;
+  return PUBLIC_API_PREFIXES.some((prefix) => path.startsWith(prefix));
+}
+
 // API key authentication middleware
 const API_KEY_HEADER = "x-api-key";
 
 app.use("/api/*", async (c, next) => {
-  // Allow health check without auth
-  if (c.req.path === "/health") {
+  // Allow public API paths without API key auth
+  if (isPublicApiPath(c.req.path)) {
     return next();
   }
 
@@ -75,9 +105,18 @@ app.use("/api/*", async (c, next) => {
     return next();
   }
 
+  // Check for session cookie (authenticated users)
+  const sessionToken = parseSessionCookie(c.req.header("Cookie"));
+  if (sessionToken) {
+    const user = await getSessionUser(c.env, sessionToken);
+    if (user) {
+      // Authenticated via session, allow request
+      return next();
+    }
+  }
+
   const apiKey = c.req.header(API_KEY_HEADER);
   const expectedKey = c.env.API_KEY;
-
   if (!expectedKey) {
     console.error("[SECURITY] API_KEY not configured - rejecting request");
     return c.json({ error: ErrorMessages.SERVER_ERROR }, 500);
@@ -160,6 +199,20 @@ const contactSchema = z
   .transform((data) => ({
     ...data,
     turnstileToken: data.turnstileToken ?? data.turnstile_token,
+  }));
+
+const deleteSchema = z
+  .object({
+    reportId: z.string().uuid().optional(),
+    report_id: z.string().uuid().optional(),
+    email: z.string().email().optional(),
+  })
+  .refine((data) => data.reportId || data.report_id || data.email, {
+    message: "Report ID or email is required",
+  })
+  .transform((data) => ({
+    reportId: data.reportId ?? data.report_id,
+    email: data.email,
   }));
 
 function reportCacheKey(hash: string) {
@@ -515,21 +568,48 @@ app.post("/api/analyze", async (c) => {
   // Only trust cf-connecting-ip from Cloudflare to prevent IP spoofing
   // x-forwarded-for can be spoofed by attackers, never use it for rate limiting
   const ip = c.req.header("cf-connecting-ip") || "unknown";
-  const ipLimitRaw = Number(c.env.RATE_LIMIT_IP_PER_MIN || 10);
-  const emailLimitRaw = Number(c.env.RATE_LIMIT_EMAIL_PER_MIN || 5);
-  const ipLimit =
-    Number.isFinite(ipLimitRaw) && ipLimitRaw > 0 ? ipLimitRaw : 10;
-  const emailLimit =
-    Number.isFinite(emailLimitRaw) && emailLimitRaw > 0 ? emailLimitRaw : 5;
 
-  if (!(await rateLimit(c.env, `ip:${ip}`, ipLimit, 60))) {
-    return c.json({ error: ErrorMessages.RATE_LIMIT_EXCEEDED }, 429);
-  }
-  if (
-    userEmail &&
-    !(await rateLimit(c.env, `email:${userEmail}`, emailLimit, 60))
-  ) {
-    return c.json({ error: ErrorMessages.EMAIL_RATE_LIMIT_EXCEEDED }, 429);
+  // Check if user is authenticated
+  const sessionToken = parseSessionCookie(c.req.header("Cookie"));
+  const authenticatedUser = sessionToken
+    ? await getSessionUser(c.env, sessionToken)
+    : null;
+
+  // For authenticated users, check quota instead of IP rate limit
+  if (authenticatedUser) {
+    const quota = await checkUserQuota(c.env, authenticatedUser);
+    if (!quota.allowed) {
+      return c.json(
+        {
+          error: "Quota exceeded",
+          quota: {
+            remaining: quota.remaining,
+            limit: quota.limit,
+            reset_at: quota.reset_at,
+            tier: quota.tier,
+          },
+        },
+        429,
+      );
+    }
+  } else {
+    // For anonymous users, use IP-based rate limiting
+    const ipLimitRaw = Number(c.env.RATE_LIMIT_IP_PER_MIN || 10);
+    const emailLimitRaw = Number(c.env.RATE_LIMIT_EMAIL_PER_MIN || 5);
+    const ipLimit =
+      Number.isFinite(ipLimitRaw) && ipLimitRaw > 0 ? ipLimitRaw : 10;
+    const emailLimit =
+      Number.isFinite(emailLimitRaw) && emailLimitRaw > 0 ? emailLimitRaw : 5;
+
+    if (!(await rateLimit(c.env, `ip:${ip}`, ipLimit, 60))) {
+      return c.json({ error: ErrorMessages.RATE_LIMIT_EXCEEDED }, 429);
+    }
+    if (
+      userEmail &&
+      !(await rateLimit(c.env, `email:${userEmail}`, emailLimit, 60))
+    ) {
+      return c.json({ error: ErrorMessages.EMAIL_RATE_LIMIT_EXCEEDED }, 429);
+    }
   }
 
   try {
@@ -541,9 +621,12 @@ app.post("/api/analyze", async (c) => {
     );
   }
 
-  const turnstileOk = await verifyTurnstile(c.env, turnstileToken, ip);
-  if (!turnstileOk) {
-    return c.json({ error: ErrorMessages.UNAUTHORIZED }, 403);
+  // Skip turnstile for authenticated users
+  if (!authenticatedUser) {
+    const turnstileOk = await verifyTurnstile(c.env, turnstileToken, ip);
+    if (!turnstileOk) {
+      return c.json({ error: ErrorMessages.UNAUTHORIZED }, 403);
+    }
   }
 
   let normalizedWebhookUrl: string | undefined;
@@ -576,11 +659,17 @@ app.post("/api/analyze", async (c) => {
     created_at: Date.now(),
   });
 
+  // Record usage immediately for authenticated users
+  if (authenticatedUser) {
+    await recordUsage(c.env, authenticatedUser.id, "analyze");
+  }
+
   try {
     await c.env.JOBS_QUEUE.send({
       jobId,
       url,
-      userEmail,
+      userEmail: authenticatedUser?.github_email || userEmail,
+      userId: authenticatedUser?.id,
       webhookUrl: normalizedWebhookUrl,
       webhookSecret,
       requestedAt: Date.now(),
@@ -645,6 +734,87 @@ app.post("/api/contact", async (c) => {
   }
 
   return c.json({ success: true });
+});
+
+app.post("/api/delete", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const parsed = deleteSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: ErrorMessages.INVALID_REQUEST }, 400);
+  }
+
+  const apiKey = c.req.header(API_KEY_HEADER);
+  if (!c.env.API_KEY || apiKey !== c.env.API_KEY) {
+    return c.json({ error: ErrorMessages.UNAUTHORIZED }, 401);
+  }
+
+  const { reportId, email } = parsed.data;
+  const records: Array<{
+    id: string;
+    url?: string | null;
+    screenshot_path?: string | null;
+  }> = [];
+
+  if (reportId) {
+    const report = await c.env.DB.prepare(
+      `SELECT id, url, screenshot_path FROM reports WHERE id = ?`,
+    )
+      .bind(reportId)
+      .first();
+    if (report) {
+      records.push(report as any);
+      await c.env.DB.prepare(`DELETE FROM reports WHERE id = ?`)
+        .bind(reportId)
+        .run();
+    }
+  }
+
+  let deletedContacts = 0;
+  if (email) {
+    const results = await c.env.DB.prepare(
+      `SELECT id, url, screenshot_path FROM reports WHERE user_email = ?`,
+    )
+      .bind(email)
+      .all();
+    if (results.results?.length) {
+      records.push(...(results.results as any[]));
+      await c.env.DB.prepare(`DELETE FROM reports WHERE user_email = ?`)
+        .bind(email)
+        .run();
+    }
+
+    const contactResult = await c.env.DB.prepare(
+      `DELETE FROM contact_messages WHERE email = ?`,
+    )
+      .bind(email)
+      .run();
+    deletedContacts = contactResult.success
+      ? ((contactResult as any).meta?.changes ?? 0)
+      : 0;
+  }
+
+  const uniqueRecords = Array.from(
+    new Map(records.map((record) => [record.id, record])).values(),
+  );
+
+  await Promise.all(
+    uniqueRecords.map(async (record) => {
+      if (record.screenshot_path) {
+        await c.env.MY_BUCKET.delete(record.screenshot_path);
+      }
+      await c.env.KV.delete(`report:by_id:${record.id}`);
+      if (record.url) {
+        const hash = await sha256(record.url);
+        await c.env.KV.delete(reportCacheKey(hash));
+      }
+    }),
+  );
+
+  return c.json({
+    success: true,
+    deleted_reports: uniqueRecords.length,
+    deleted_contact_messages: deletedContacts,
+  });
 });
 
 app.get("/api/jobs/:id", async (c) => {
@@ -817,6 +987,141 @@ app.get("/health", async (c) => {
 
   checks.timings.total_ms = Date.now() - start;
   return c.json(checks, checks.ok ? 200 : 503);
+});
+
+// ============ AUTH ROUTES ============
+
+// GET /auth/github - Redirect to GitHub OAuth
+app.get("/auth/github", async (c) => {
+  if (!c.env.GITHUB_CLIENT_ID || !c.env.GITHUB_CLIENT_SECRET) {
+    return c.json({ error: "GitHub OAuth not configured" }, 500);
+  }
+
+  const state = await generateOAuthState(c.env);
+  const authUrl = getGitHubAuthUrl(c.env, state);
+
+  return c.redirect(authUrl, 302);
+});
+
+// GET /auth/github/callback - OAuth callback
+app.get("/auth/github/callback", async (c) => {
+  const code = c.req.query("code");
+  const state = c.req.query("state");
+  const error = c.req.query("error");
+
+  const frontendUrl = c.env.FRONTEND_URL || "https://thedoorpost.com";
+  const loginErrorUrl = `${frontendUrl}/login?error=`;
+
+  if (error) {
+    return c.redirect(`${loginErrorUrl}${encodeURIComponent(error)}`, 302);
+  }
+
+  if (!code || !state) {
+    return c.redirect(`${loginErrorUrl}missing_params`, 302);
+  }
+
+  // Verify state
+  const validState = await verifyAndConsumeState(c.env, state);
+  if (!validState) {
+    return c.redirect(`${loginErrorUrl}invalid_state`, 302);
+  }
+
+  // Exchange code for token
+  const token = await exchangeCodeForToken(c.env, code);
+  if (!token) {
+    return c.redirect(`${loginErrorUrl}token_exchange_failed`, 302);
+  }
+
+  // Fetch GitHub user
+  const ghUser = await fetchGitHubUser(token);
+  if (!ghUser) {
+    return c.redirect(`${loginErrorUrl}user_fetch_failed`, 302);
+  }
+
+  // Upsert user in database
+  const user = await upsertUser(c.env, ghUser);
+  if (!user) {
+    return c.redirect(`${loginErrorUrl}user_create_failed`, 302);
+  }
+
+  // Create session
+  const sessionToken = await createSession(c.env, user.id);
+
+  // Set cookie and redirect
+  const domain = c.env.SESSION_COOKIE_DOMAIN || "thedoorpost.com";
+  const isSecure = !domain.includes("localhost");
+  const cookie = buildSessionCookie(sessionToken, domain, isSecure);
+
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: `${frontendUrl}/dashboard`,
+      "Set-Cookie": cookie,
+    },
+  });
+});
+
+// GET /auth/me - Get current user
+app.get("/auth/me", async (c) => {
+  const sessionToken = parseSessionCookie(c.req.header("Cookie"));
+  if (!sessionToken) {
+    return c.json({ error: "Not authenticated" }, 401);
+  }
+
+  const user = await getSessionUser(c.env, sessionToken);
+  if (!user) {
+    return c.json({ error: "Session expired" }, 401);
+  }
+
+  const usage = await getUserUsageStats(c.env, user);
+
+  return c.json({
+    user: {
+      id: user.id,
+      github_login: user.github_login,
+      github_name: user.github_name,
+      github_email: user.github_email,
+      github_avatar_url: user.github_avatar_url,
+      tier: user.tier,
+    },
+    usage,
+  });
+});
+
+// POST /auth/logout - Logout
+app.post("/auth/logout", async (c) => {
+  const sessionToken = parseSessionCookie(c.req.header("Cookie"));
+  if (sessionToken) {
+    await deleteSession(c.env, sessionToken);
+  }
+
+  const domain = c.env.SESSION_COOKIE_DOMAIN || "thedoorpost.com";
+  const isSecure = !domain.includes("localhost");
+  const cookie = buildLogoutCookie(domain, isSecure);
+
+  return new Response(JSON.stringify({ success: true }), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "Set-Cookie": cookie,
+    },
+  });
+});
+
+// GET /auth/quota - Check user quota
+app.get("/auth/quota", async (c) => {
+  const sessionToken = parseSessionCookie(c.req.header("Cookie"));
+  if (!sessionToken) {
+    return c.json({ error: "Not authenticated" }, 401);
+  }
+
+  const user = await getSessionUser(c.env, sessionToken);
+  if (!user) {
+    return c.json({ error: "Session expired" }, 401);
+  }
+
+  const quota = await checkUserQuota(c.env, user);
+  return c.json(quota);
 });
 
 export default {

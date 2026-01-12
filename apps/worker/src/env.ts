@@ -27,6 +27,13 @@ export const envSchema = z.object({
   WEBHOOK_MAX_RETRIES: z.string().optional(),
   API_KEY: z.string().optional(),
   DISABLE_API_KEY_AUTH: z.string().optional(),
+  // GitHub OAuth
+  GITHUB_CLIENT_ID: z.string().optional(),
+  GITHUB_CLIENT_SECRET: z.string().optional(),
+  GITHUB_REDIRECT_URI: z.string().optional(),
+  SESSION_SECRET: z.string().optional(),
+  SESSION_COOKIE_DOMAIN: z.string().optional(),
+  FRONTEND_URL: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

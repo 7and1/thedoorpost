@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Navbar from "../../../components/Navbar";
 import Footer from "../../../components/Footer";
+import IndustryLandingBlock from "../../../components/IndustryLandingBlock";
 import { industries } from "../../../lib/industries";
 
 export function generateStaticParams() {
@@ -47,14 +48,10 @@ export default async function IndustryPage({
           {industry.title}
         </h1>
         <div className="grid grid-2">
-          <div className="card">
-            <h3>Why it matters</h3>
-            <ul>
-              {industry.benefits.map((benefit) => (
-                <li key={benefit}>{benefit}</li>
-              ))}
-            </ul>
-          </div>
+          <IndustryLandingBlock
+            industry={industry.title}
+            benefits={industry.benefits}
+          />
           <div className="card">
             <h3>Next step</h3>
             <p>

@@ -6,6 +6,7 @@ import ReportCard from "../../../components/ReportCard";
 import ScreenshotPanel from "../../../components/ScreenshotPanel";
 import ShareButtons from "../../../components/ShareButtons";
 import FeedbackButtons from "../../../components/FeedbackButtons";
+import PricingCTA from "../../../components/PricingCTA";
 import type { ReportResult } from "@thedoorpost/shared";
 
 const API_BASE =
@@ -60,10 +61,36 @@ export default async function ReportPage({
   const reportPath = `/report/${id}`;
   const exportPdfUrl = `${API_BASE}/api/reports/${id}/export.pdf`;
   const exportCsvUrl = `${API_BASE}/api/reports/${id}/export.csv`;
+  const showUpgrade = report.data.overall_score < 70;
+  const reviewJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Review",
+    name: `TheDoorpost Report ${report.data.overall_score}/100`,
+    reviewBody: report.data.summary,
+    reviewRating: {
+      "@type": "Rating",
+      ratingValue: report.data.overall_score,
+      bestRating: "100",
+      worstRating: "0",
+    },
+    author: {
+      "@type": "Organization",
+      name: "TheDoorpost",
+    },
+    itemReviewed: {
+      "@type": "CreativeWork",
+      name: "Above-the-Fold Report",
+      url: `https://thedoorpost.com/report/${id}`,
+    },
+  };
 
   return (
     <main>
       <Navbar />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewJsonLd) }}
+      />
       <section className="section">
         <h1 style={{ fontSize: "2.2rem", marginBottom: 12 }}>Report #{id}</h1>
         <ShareButtons reportUrl={reportPath} />
@@ -99,6 +126,31 @@ export default async function ReportPage({
           <ReportCard report={report.data} />
         </div>
         <FeedbackButtons />
+        {showUpgrade && (
+          <div style={{ marginTop: 32 }}>
+            <h2 style={{ fontSize: "1.6rem", marginBottom: 12 }}>
+              Improve your score faster
+            </h2>
+            <p style={{ color: "var(--muted)" }}>
+              Upgrade to unlock deeper insights, exports, and extended report
+              retention.
+            </p>
+            <div className="grid" style={{ marginTop: 16 }}>
+              <PricingCTA
+                plan="Pro"
+                price="$29/mo"
+                features={[
+                  "200 analyses per month",
+                  "PDF & CSV exports",
+                  "12-month report retention",
+                ]}
+                ctaLabel="Upgrade to Pro"
+                href="/pricing"
+                highlight
+              />
+            </div>
+          </div>
+        )}
         <div style={{ marginTop: 32, textAlign: "center" }}>
           <a className="button" href="/">
             Analyze Another Site

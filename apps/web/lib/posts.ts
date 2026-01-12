@@ -118,198 +118,292 @@ export const posts: Post[] = [
     ],
   },
   {
-    slug: "mobile-optimization-checklist",
-    title: "Mobile Optimization Checklist for Higher Conversions",
+    slug: "mobile-fold-optimization",
+    title: "Mobile Fold Optimization: What Changes Conversions",
     excerpt:
-      "Over 60% of web traffic is mobile. Is your landing page ready? This checklist covers touch targets, readable text, thumb-friendly CTAs, and mobile-specific UX patterns.",
+      "Mobile users decide in seconds. Learn how thumb-zone CTAs, readable copy, and mobile trust cues keep users engaged above the fold.",
     date: "2026-01-04",
     readingTime: "6 min read",
     sections: [
       {
-        heading: "Thumb-friendly interaction",
+        heading: "Design for the thumb zone",
         paragraphs: [
-          "Design for thumbs first. Place the primary CTA within the natural thumb zone and keep tap targets at least 44px high.",
-          "Avoid small links stacked too closely together; accidental taps cost trust.",
+          "Place the primary CTA where thumbs naturally rest and keep tap targets at least 44px high.",
+          "Avoid stacking multiple small links; accidental taps feel like errors and erode trust.",
         ],
         bullets: [
           "CTA width: 100% on mobile",
           "Tap targets: 44px minimum",
-          "Avoid hidden menus for primary actions",
+          "Primary CTA stays above the fold",
         ],
       },
       {
-        heading: "Performance and readability",
+        heading: "Compress the message",
         paragraphs: [
-          "Mobile users are less patient. Keep hero images optimized, defer non-critical scripts, and avoid layout shifts.",
-          "Text should be at least 16px with a clear line height. If the copy is hard to scan, the message is lost.",
+          "Mobile viewports compress everything. Use a single, outcome-focused headline and a one-sentence subhead.",
+          "If you need details, move them below the fold and keep the hero scannable.",
         ],
       },
       {
-        heading: "Mobile-specific trust",
+        heading: "Trust cues above the fold",
         paragraphs: [
-          "Highlight reviews and ratings higher on the page because mobile users scan faster.",
-          "If you have a mobile app, show the app store ratings near the hero to anchor trust instantly.",
+          "Bring proof closer to the CTA: ratings, logos, or a short proof line right below the button.",
+          "If you have an app, show the app store rating near the hero to anchor confidence.",
         ],
       },
     ],
   },
   {
-    slug: "conversion-psychology",
-    title: "Conversion Psychology: What Makes Visitors Click",
+    slug: "psychology-first-impressions",
+    title: "The Psychology of First Impressions",
     excerpt:
-      "Understanding cognitive biases and psychological triggers that drive action. Explore loss aversion, social proof, scarcity, and the paradox of choice in landing page design.",
+      "First impressions set the conversion trajectory. Use cognitive fluency, social proof, and loss aversion to make the fold feel obvious and safe.",
     date: "2026-01-05",
     readingTime: "7 min read",
     sections: [
       {
-        heading: "Clarity reduces friction",
+        heading: "Cognitive fluency wins",
         paragraphs: [
-          "The brain avoids work. The clearer your offer, the less effort it takes to decide. Keep the message short and the action obvious.",
-          "Remove competing CTAs so the decision path is singular.",
+          "The brain prefers easy decisions. If the offer is clear in five seconds, users feel confident moving forward.",
+          "Simplify the headline and reduce competing CTAs so the path is singular.",
         ],
       },
       {
-        heading: "Social proof signals safety",
+        heading: "Social proof reduces risk",
         paragraphs: [
-          "People look for cues that others made the same choice. Use logos, counts, and specific testimonials to create momentum.",
-          'Numbers matter when they are concrete and relevant: "4.8/5 from 620 teams" beats "Loved by customers".',
+          "People look for cues that others succeeded. Use logos, counts, and concrete testimonials to build momentum.",
+          'Numbers matter when they are specific: "4.8/5 from 620 teams" beats "Loved by customers."',
         ],
       },
       {
         heading: "Urgency without pressure",
         paragraphs: [
-          "Urgency works when it is real and specific. A limited-time audit or weekly report slots can motivate action without feeling manipulative.",
-          "If you cannot justify urgency, use curiosity: show a preview or partial score to pull users forward.",
+          "Urgency works when it is real: limited audit slots or weekly report drops can motivate action.",
+          "If urgency is not credible, use curiosity by revealing a partial score or preview.",
         ],
       },
     ],
   },
   {
-    slug: "ab-testing-framework",
-    title: "A/B Testing Framework for Landing Pages",
+    slug: "homepage-cro-checklist",
+    title: "Checklist for Homepage CRO",
     excerpt:
-      "Stop guessing and start testing. Learn how to prioritize experiments, set up proper tracking, reach statistical significance, and iterate based on data-driven insights.",
+      "A practical CRO checklist you can run before every launch. Validate clarity, hierarchy, CTA strength, and trust signals in minutes.",
     date: "2026-01-06",
-    readingTime: "8 min read",
+    readingTime: "7 min read",
     sections: [
       {
-        heading: "Choose one primary KPI",
+        heading: "Message clarity",
         paragraphs: [
-          "Every test should map to a single primary metric: click-through, form completion, or activation. Secondary metrics can be tracked, but they should not decide the winner.",
+          "The headline should state a single outcome and a single audience. If it reads like a tagline, it is too vague.",
+          "Use the subhead to add proof or a second layer of specificity.",
+        ],
+        bullets: ["Outcome first", "Audience second", "No jargon"],
+      },
+      {
+        heading: "Primary action path",
+        paragraphs: [
+          "One primary CTA above the fold. If you must include a secondary CTA, keep it visually subtle.",
+          "Ensure the CTA label completes the headline promise.",
         ],
       },
       {
-        heading: "Build a hypothesis backlog",
+        heading: "Proof and risk reducers",
         paragraphs: [
-          'Document each test with a clear hypothesis: "If we clarify the value prop in the hero, then demo clicks will increase."',
-          "Prioritize based on impact, confidence, and effort to avoid random testing.",
-        ],
-        bullets: [
-          "Impact: expected lift",
-          "Confidence: evidence strength",
-          "Effort: time to implement",
-        ],
-      },
-      {
-        heading: "Respect test hygiene",
-        paragraphs: [
-          "Avoid running overlapping tests that affect the same elements. Keep experiments isolated to maintain clean results.",
-          "Run tests long enough to avoid false positives. Rushing decisions can reverse gains later.",
+          "Add one strong proof signal near the CTA: a logo row, a short result, or a rating.",
+          'Risk reducers like "No credit card required" remove friction at the moment of decision.',
         ],
       },
     ],
   },
   {
-    slug: "hero-section-templates",
-    title: "Hero Section Templates That Convert",
+    slug: "ecommerce-hero-section-checklist",
+    title: "Ecommerce Hero Section Checklist",
     excerpt:
-      "Analyze 8 proven hero section patterns across different industries. See how successful brands structure their headlines, subheadlines, CTAs, and visual hierarchy.",
+      "Make the first scroll sell. This checklist covers product clarity, offers, and trust elements that boost ecommerce conversions.",
     date: "2026-01-07",
     readingTime: "6 min read",
     sections: [
       {
-        heading: "The quick-clarity template",
+        heading: "Product and offer clarity",
         paragraphs: [
-          "Headline: outcome-first. Subhead: who it is for. CTA: immediate action. This works for most SaaS and B2B products.",
-          "Pair with a short visual that shows the product in context.",
+          "Show the best-selling product or collection with a clear value statement.",
+          "If you run a promotion, make it headline-level and remove competing offers.",
+        ],
+        bullets: ["Hero image highlights the product", "Offer is explicit", "CTA says what happens next"],
+      },
+      {
+        heading: "Conversion boosters",
+        paragraphs: [
+          "Add shipping guarantees, return policies, or delivery timing in the hero to reduce hesitation.",
+          "Use a secondary CTA for product discovery without distracting from checkout intent.",
         ],
       },
       {
-        heading: "The problem-solution template",
+        heading: "Reduce purchase anxiety",
         paragraphs: [
-          "Open with the pain point, then promise the fix. This pattern works well when the user already feels the problem.",
-          "Keep the pain concise and avoid negative overload. One line is enough.",
-        ],
-      },
-      {
-        heading: "The proof-led template",
-        paragraphs: [
-          "Lead with a proof statement or customer result, then explain the product. This pattern works for agencies and consultants.",
-          'The CTA should reinforce the proof: "See your score" or "Get my audit".',
+          "Show reviews or ratings above the fold to establish instant trust.",
+          "If the price is premium, reinforce quality with a short proof point.",
         ],
       },
     ],
   },
   {
-    slug: "ux-principles-conversion",
-    title: "UX Principles That Drive Conversion",
+    slug: "visual-hierarchy-conversion",
+    title: "The Role of Visual Hierarchy in Conversion",
     excerpt:
-      "Good UX is good business. Discover how F-pattern reading, visual hierarchy, whitespace, and micro-interactions contribute to a seamless conversion journey.",
+      "Visual hierarchy decides what gets read, clicked, and trusted. Learn the hierarchy rules that make hero sections convert.",
     date: "2026-01-08",
     readingTime: "7 min read",
     sections: [
       {
-        heading: "Hierarchy guides attention",
+        heading: "Hierarchy sets the path",
         paragraphs: [
-          "Use size, contrast, and spacing to guide the eye. The headline should dominate, the CTA should pop, and supporting text should remain secondary.",
+          "The eye should move headline → subhead → CTA → proof. If any step is unclear, conversions drop.",
+          "Use size and contrast to establish a clear priority order.",
         ],
       },
       {
-        heading: "Whitespace is a signal",
+        heading: "Contrast and whitespace",
         paragraphs: [
-          "Whitespace improves comprehension and increases perceived quality. Crammed layouts feel risky and untrustworthy.",
-          "Give the CTA room to breathe and keep line lengths readable.",
+          "Whitespace is not empty; it is a signal that elevates the CTA and reduces cognitive load.",
+          "High-contrast CTAs feel more intentional and increase click-through rates.",
         ],
       },
       {
-        heading: "Micro-interactions build confidence",
+        heading: "Micro-interactions with intent",
         paragraphs: [
-          "Small confirmations like button states or progress steps reassure users. They reduce anxiety during submission or sign-up.",
-          "Avoid excessive motion; keep it purposeful and subtle.",
+          "Subtle hover states and progress cues reduce anxiety during conversion.",
+          "Avoid excessive motion; it should guide attention, not compete with the message.",
         ],
       },
     ],
   },
   {
-    slug: "analytics-metrics-matter",
-    title: "The Analytics Metrics That Actually Matter",
+    slug: "above-the-fold-score-benchmarks",
+    title: "Above-the-Fold Score Benchmarks",
     excerpt:
-      "Beyond vanity metrics. Learn which KPIs indicate true landing page health, how to set up meaningful goals, and what to do with the data once you have it.",
+      "Benchmark your hero section score and know what good looks like. Use these ranges to prioritize the right fixes first.",
     date: "2026-01-09",
     readingTime: "7 min read",
     sections: [
       {
-        heading: "Pick a north-star metric",
+        heading: "Score ranges that matter",
         paragraphs: [
-          "Choose the metric that best reflects business value: demo requests, trials started, or qualified leads. Everything else should support that goal.",
-        ],
-      },
-      {
-        heading: "Diagnostic metrics to watch",
-        paragraphs: [
-          "Scroll depth, CTA click-through, and time-to-first-action expose where the funnel leaks.",
-          "If clicks are high but conversions are low, the issue is likely in the form or offer, not the hero.",
+          "90+ means the offer is clear, the CTA is dominant, and trust signals are visible.",
+          "60-80 indicates solid fundamentals with one or two high-impact gaps.",
         ],
         bullets: [
-          "Hero CTA CTR",
-          "Form completion rate",
-          "Time to first action",
+          "90-100: conversion-ready",
+          "70-89: strong but improvable",
+          "0-69: clarity or trust issues",
         ],
       },
       {
-        heading: "Use insights to decide",
+        heading: "What drives a high score",
         paragraphs: [
-          "Metrics only matter if they change decisions. Build a weekly review habit where you link data to a single experiment or content update.",
+          "Strong value propositions and CTA contrast consistently lift scores.",
+          "Trust signals near the action area are a repeatable differentiator.",
+        ],
+      },
+      {
+        heading: "How to use benchmarks",
+        paragraphs: [
+          "Compare your score to peers in your industry and focus on the biggest delta first.",
+          "Track score movement after each major hero update to validate impact.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "landing-page-teardown-northwind",
+    title: "Landing Page Teardown: Northwind Analytics",
+    excerpt:
+      "A teardown of a fictional analytics homepage to show how clarity, proof, and CTA hierarchy can be improved above the fold.",
+    date: "2026-01-10",
+    readingTime: "7 min read",
+    sections: [
+      {
+        heading: "What works above the fold",
+        paragraphs: [
+          "Northwind leads with a clear promise and a concise subhead, making it easy to understand the product in seconds.",
+          "The hero visual reinforces the outcome by showing the dashboard in context.",
+        ],
+      },
+      {
+        heading: "What is missing",
+        paragraphs: [
+          "The CTA competes with two secondary links, which dilutes the action path.",
+          "Trust signals appear too far below the fold, increasing perceived risk.",
+        ],
+      },
+      {
+        heading: "Prioritized fixes",
+        paragraphs: [
+          "Reduce the hero to one primary CTA and move proof directly beneath it.",
+          "Replace vague metrics with a specific customer outcome to boost credibility.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "saas-homepage-audits",
+    title: "SaaS Homepage Audits: What High-Converting Teams Do",
+    excerpt:
+      "A repeatable audit checklist for SaaS homepages that clarifies the value prop, simplifies the CTA path, and adds proof fast.",
+    date: "2026-01-11",
+    readingTime: "6 min read",
+    sections: [
+      {
+        heading: "Signal the outcome quickly",
+        paragraphs: [
+          "SaaS buyers scan fast. The headline should state the outcome and for whom in one line.",
+          "Use the subhead to quantify time saved, revenue gained, or risk reduced.",
+        ],
+      },
+      {
+        heading: "Show product in context",
+        paragraphs: [
+          "Use a focused screenshot or short loop that shows the product solving the promised problem.",
+          "Avoid generic stock imagery that does not reinforce the narrative.",
+        ],
+      },
+      {
+        heading: "Reduce trial friction",
+        paragraphs: [
+          "Call out trial terms clearly and place proof near the CTA to reduce hesitation.",
+          "If the onboarding is short, highlight the time-to-value explicitly.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "ai-cro-audits",
+    title: "How to Use AI for CRO Audits",
+    excerpt:
+      "Use AI to scale your landing page audits without losing rigor. Learn how to standardize inputs, interpret outputs, and prioritize fixes.",
+    date: "2026-01-12",
+    readingTime: "6 min read",
+    sections: [
+      {
+        heading: "Capture consistent inputs",
+        paragraphs: [
+          "Use the same viewport and screenshot dimensions to make comparisons reliable.",
+          "Pair AI analysis with a consistent rubric so scores remain explainable.",
+        ],
+      },
+      {
+        heading: "Translate insights into tests",
+        paragraphs: [
+          "AI can identify priority fixes, but teams must convert them into hypotheses and tests.",
+          "Focus on one change per experiment to attribute impact accurately.",
+        ],
+      },
+      {
+        heading: "Keep a human review loop",
+        paragraphs: [
+          "AI outputs should be reviewed by a strategist before shipping changes.",
+          "Use human feedback to update prompts and keep the system aligned to business goals.",
         ],
       },
     ],
