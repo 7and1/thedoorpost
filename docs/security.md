@@ -21,7 +21,8 @@
 ## Secrets Management
 
 - Store in Wrangler secrets.
-- Rotate OpenAI key every 60-90 days.
+- Rotate OpenRouter keys every 60-90 days.
+- Keep Turnstile secret in Wrangler secrets only.
 
 ## Data Privacy
 

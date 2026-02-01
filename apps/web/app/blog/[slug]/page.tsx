@@ -47,8 +47,9 @@ export default async function BlogPostPage({
     datePublished: post.date,
     dateModified: post.date,
     author: {
-      "@type": "Organization",
-      name: "TheDoorpost",
+      "@type": "Person",
+      name: post.author,
+      url: `https://thedoorpost.com${post.authorUrl}`,
     },
     publisher: {
       "@type": "Organization",
@@ -58,7 +59,10 @@ export default async function BlogPostPage({
         url: "https://thedoorpost.com/logo.svg",
       },
     },
-    mainEntityOfPage: `https://thedoorpost.com/blog/${post.slug}`,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `https://thedoorpost.com/blog/${post.slug}`,
+    },
   };
   return (
     <main>
@@ -69,6 +73,9 @@ export default async function BlogPostPage({
       />
       <section className="section">
         <h1 style={{ fontSize: "2.4rem", marginBottom: 12 }}>{post.title}</h1>
+        <p style={{ color: "var(--muted)", marginBottom: 8 }}>
+          By <a href={post.authorUrl} style={{ color: "var(--primary)" }}>{post.author}</a>
+        </p>
         <p style={{ color: "var(--muted)" }}>
           {post.date} · {post.readingTime}
         </p>

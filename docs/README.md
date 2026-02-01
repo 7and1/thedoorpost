@@ -7,6 +7,7 @@ This folder contains the production-ready blueprint and implementation plan for 
 - Ship a reliable full-stack system for "Above the Fold" analysis with screenshot + AI insights.
 - Use OpenNext on Cloudflare Workers for the frontend.
 - Use Cloudflare Browser Rendering (serverless) for screenshots and analysis.
+- Use OpenRouter for AI scoring with fallback models.
 - Use Cloudflare D1 for reports, R2 for screenshots, KV + Edge Cache for caching.
 
 ## Doc Map

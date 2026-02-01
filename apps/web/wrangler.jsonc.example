@@ -13,6 +13,7 @@
   ],
   "vars": {
     "NEXT_PUBLIC_API_BASE": "https://your-worker.your-subdomain.workers.dev",
+    "NEXT_PUBLIC_TURNSTILE_SITE_KEY": "your_turnstile_site_key",
     "NEXT_INC_CACHE_R2_PREFIX": "incremental-cache"
   }
 }

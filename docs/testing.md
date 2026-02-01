@@ -8,7 +8,7 @@
 
 ## Integration Tests
 
-- Worker -> Browser Rendering API (mock OpenAI).
+- Worker -> Browser Rendering API (mock OpenRouter).
 - D1 insert and retrieve.
 - R2 upload and public URL.
 - SSE job progress and completion.

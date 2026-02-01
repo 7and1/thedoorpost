@@ -30,7 +30,7 @@
 - Use `@cloudflare/puppeteer` in Worker.
 - Render with viewport 1440x900.
 - Downscale AI image to 1024px width (or smaller) to reduce cost.
-- Call OpenAI with streaming response; emit score-first events.
+- Call OpenRouter with score-first prompt; emit progress events.
 
 ## Step 4: Storage Integration
 

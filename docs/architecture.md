@@ -13,7 +13,7 @@ Cloudflare Worker Gateway
 | D1 (reports)
 | R2 (screenshots)
 | Browser Rendering API (headless Chromium)
-| OpenAI API
+| OpenRouter API
 
 ## Key Components
 
@@ -41,7 +41,7 @@ Cloudflare Worker Gateway
 ## Failure Modes
 
 - Browser Rendering API slow/unavailable: return cached report; allow retry.
-- OpenAI errors: retry w/ exponential backoff; return partial error.
+- OpenRouter errors: retry w/ exponential backoff; return partial error.
 - D1 write latency: write-through to KV and return response immediately.
 
 ## Security Boundaries

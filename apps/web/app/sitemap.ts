@@ -11,7 +11,7 @@ export default function sitemap() {
     "/blog",
     "/best-landing-pages",
     "/common-mistakes",
-    "/contact",
+    "/about",
     "/privacy",
     "/terms",
   ];
@@ -21,9 +21,9 @@ export default function sitemap() {
     "/analyze": 0.9,
     "/pricing": 0.8,
     "/blog": 0.7,
+    "/about": 0.6,
     "/best-landing-pages": 0.6,
     "/common-mistakes": 0.6,
-    "/contact": 0.5,
     "/privacy": 0.3,
     "/terms": 0.3,
   };

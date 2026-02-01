@@ -22,7 +22,7 @@ Responsibilities
 - Rate limiting (KV).
 - Cache lookup (KV).
 - Browser Rendering for screenshot capture.
-- Call OpenAI for analysis.
+- Call OpenRouter for analysis.
 - Persist report (D1) + screenshot (R2).
 - Return response JSON + job progress updates.
 
@@ -32,7 +32,7 @@ Responsibilities
 
 - Render page in headless Chromium (serverless).
 - Capture above-the-fold screenshot.
-- Call OpenAI vision model.
+- Call OpenRouter vision model.
 - Return structured JSON.
 
 ## 4) Storage

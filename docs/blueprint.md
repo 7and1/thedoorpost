@@ -35,7 +35,7 @@ TheDoorpost analyzes a website's above-the-fold experience using a screenshot + 
 1. User submits URL via frontend.
 2. Worker validates, checks KV cache.
 3. Cache miss -> Worker starts job, returns job_id immediately.
-4. Worker renders screenshot via Browser Rendering API, calls OpenAI, streams progress.
+4. Worker renders screenshot via Browser Rendering API, calls OpenRouter, streams progress.
 5. Worker stores image in R2, writes report to D1, writes cache to KV.
 6. Frontend subscribes to job progress (SSE or polling) and renders result.
 

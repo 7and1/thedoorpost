@@ -21,10 +21,10 @@
 ## Phase 3: Growth (Week 3-4)
 
 - Blog + programmatic SEO pages.
-- Pricing page and upgrade CTA.
+- Free positioning and credibility content.
 - Performance optimizations.
 
-## Phase 4: Monetization (Optional)
+## Phase 4: Sustainability (Optional)
 
-- Stripe checkout and plan limits.
-- Extended report retention.
+- Sponsorships or partnerships.
+- Cost controls and cache optimization.

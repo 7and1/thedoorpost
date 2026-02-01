@@ -101,30 +101,20 @@ export default function TermsPage() {
               TheDoorpost shall not be liable for any indirect, incidental,
               special, consequential, or punitive damages resulting from your
               use of the service. Our total liability shall not exceed the
-              amount you paid for the service in the twelve months preceding the
-              claim.
+              amount you paid for the service (if any) in the twelve months
+              preceding the claim.
             </p>
           </section>
 
           <section style={{ marginBottom: 32 }}>
             <h2 style={{ fontSize: "1.4rem", marginBottom: 12 }}>
-              6. Subscription & Billing
+              6. Pricing
             </h2>
-            <p style={{ marginBottom: 12, color: "var(--muted)" }}>
-              For paid subscriptions:
+            <p style={{ color: "var(--muted)", lineHeight: 1.7 }}>
+              TheDoorpost is free to use and does not require a paid
+              subscription. We may enforce fair-use limits to protect service
+              availability.
             </p>
-            <ul
-              style={{
-                paddingLeft: 20,
-                color: "var(--muted)",
-                lineHeight: 1.7,
-              }}
-            >
-              <li>Fees are billed monthly or annually as selected</li>
-              <li>You may cancel your subscription at any time</li>
-              <li>No refunds for partial months of service</li>
-              <li>Usage limits apply per plan tier</li>
-            </ul>
           </section>
 
           <section style={{ marginBottom: 32 }}>

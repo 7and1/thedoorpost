@@ -52,8 +52,8 @@ Indexes
 
 ## Retention
 
-- Report metadata: 12-24 months.
-- Screenshots: 6-12 months, extendable for paid plans.
+- Report metadata: 7-30 days (tune by cost and compliance).
+- Screenshots: 7-30 days (match report retention).
 - Logs: 30-90 days.
 
 ## PII

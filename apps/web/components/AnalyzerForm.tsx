@@ -227,8 +227,8 @@ export default function AnalyzerForm({
           resetKey={turnstileReset}
         />
         <div style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
-          We only analyze above-the-fold content and do not store login
-          credentials or user sessions.
+          No login required. Turnstile verification keeps the service free and
+          abuse-resistant.
         </div>
       </form>
 

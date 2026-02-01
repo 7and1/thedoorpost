@@ -78,9 +78,8 @@ export default function PrivacyPage() {
               3. Data Storage & Retention
             </h2>
             <p style={{ color: "var(--muted)", lineHeight: 1.7 }}>
-              Analysis reports are stored for the duration of your subscription:
-              <br />- Free tier: 7 days
-              <br />- Pro tier: 12 months
+              Analysis reports are stored for a limited retention period:
+              <br />- Standard retention: 7 days
               <br />
               <br />
               After the retention period, all associated data is permanently

@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Pricing — TheDoorpost",
   description:
-    "Transparent pricing for above-the-fold CRO analysis. Start free, upgrade when you need higher volume.",
+    "TheDoorpost is 100% free with Turnstile verification. No login required.",
   alternates: {
     canonical: "/pricing",
   },
@@ -34,10 +34,10 @@ export default function PricingPage() {
       },
       {
         "@type": "Question",
-        name: "Can I cancel anytime?",
+        name: "Is TheDoorpost really free?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes. You can cancel or downgrade at any time and keep access through the end of your billing cycle.",
+          text: "Yes. TheDoorpost is free to use and does not require a login.",
         },
       },
     ],
@@ -52,31 +52,21 @@ export default function PricingPage() {
       <section className="section">
         <h1 style={{ fontSize: "2.4rem", marginBottom: 12 }}>Pricing</h1>
         <p style={{ color: "var(--muted)" }}>
-          Simple, transparent pricing. Start for free.
+          100% free. No login. Just verify the Turnstile challenge and run your
+          analysis.
         </p>
-        <div className="grid grid-2" style={{ marginTop: 24 }}>
+        <div className="grid" style={{ marginTop: 24 }}>
           <div className="card">
-            <h3>Starter</h3>
+            <h3>Free</h3>
             <p style={{ fontSize: "2rem", margin: "12px 0" }}>$0</p>
             <ul>
-              <li>10 analyses per month</li>
+              <li>No login required</li>
+              <li>Turnstile-protected requests</li>
               <li>Basic reports</li>
-              <li>7-day report retention</li>
+              <li>Report retention with cached results</li>
             </ul>
             <a className="button" style={{ marginTop: 12 }} href="/analyze">
               Get Started
-            </a>
-          </div>
-          <div className="card" style={{ borderColor: "#1d4ed8" }}>
-            <h3>Pro</h3>
-            <p style={{ fontSize: "2rem", margin: "12px 0" }}>$29/mo</p>
-            <ul>
-              <li>200 analyses per month</li>
-              <li>Full reports + export</li>
-              <li>12-month report retention</li>
-            </ul>
-            <a className="button" style={{ marginTop: 12 }} href="/contact">
-              Contact Us
             </a>
           </div>
         </div>
@@ -99,10 +89,9 @@ export default function PricingPage() {
                 </p>
               </div>
               <div>
-                <strong>Can I cancel anytime?</strong>
+                <strong>Is TheDoorpost really free?</strong>
                 <p style={{ color: "var(--muted)" }}>
-                  Yes. You can cancel or downgrade at any time and keep access
-                  through the end of your billing cycle.
+                  Yes. TheDoorpost is free to use and does not require a login.
                 </p>
               </div>
             </div>

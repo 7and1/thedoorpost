@@ -44,13 +44,16 @@ max_batch_size = 5
 max_batch_timeout = 30
 
 [vars]
-OPENAI_MODEL = "gpt-4o"
+AI_MODEL = "meta-llama/llama-3.3-70b-instruct:free"
+AI_FALLBACK_MODELS = "deepseek/deepseek-r1-0528:free,google/gemini-3-flash-preview"
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+OPENROUTER_APP_URL = "https://thedoorpost.com"
+OPENROUTER_APP_NAME = "TheDoorpost"
 R2_PUBLIC_BASE_URL = "https://r2.thedoorpost.com"
 JOB_TTL_SECONDS = "3600"
 REPORT_CACHE_TTL_SECONDS = "172800"
 ENABLE_DOH_CHECK = "true"
-OPENAI_STREAM = "true"
-OPENAI_TIMEOUT_MS = "20000"
+AI_TIMEOUT_MS = "20000"
 RATE_LIMIT_IP_PER_MIN = "10"
 RATE_LIMIT_EMAIL_PER_MIN = "5"
 CONTACT_RATE_LIMIT_PER_HOUR = "5"

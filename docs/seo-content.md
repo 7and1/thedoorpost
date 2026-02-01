@@ -4,6 +4,7 @@
 
 - Rank for "above the fold analyzer", "landing page CRO audit", "landing page critique".
 - Use programmatic SEO for industries and use cases.
+- Emphasize "free, no login" in titles and meta where relevant.
 
 ## Technical SEO
 

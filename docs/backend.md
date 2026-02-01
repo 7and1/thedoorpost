@@ -95,11 +95,11 @@ Behaviors
 - Timeout: 15000ms for navigation
 - Block heavy resources (video, font) to speed.
 
-## OpenAI Strategy
+## OpenRouter Strategy
 
 - Prompt requires strict JSON response.
-- Request score-first ordering to enable streaming UX.
-- Use streaming responses to push early scores to client.
+- Request score-first ordering to enable progressive UX.
+- Rotate API keys and fall back across models for stability.
 
 ## Data Consistency (Write-after-read)
 
@@ -109,7 +109,7 @@ Behaviors
 
 ## Error Handling
 
-- Retry OpenAI 2x with exponential backoff.
+- Retry OpenRouter 2x with exponential backoff.
 - If AI fails, return partial with reason and allow retry.
 - Return 4xx for invalid URL.
 

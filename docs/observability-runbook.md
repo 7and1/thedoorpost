@@ -4,11 +4,12 @@
 
 - Worker logs shipped via Logpush.
 - Browser Rendering errors logged in Worker.
+- Request IDs included on all responses via `x-request-id`.
 
 ## Metrics
 
 - Request count, latency, error rate.
-- OpenAI API latency and failures.
+- OpenRouter API latency and failures.
 - Cache hit ratio (KV + edge cache).
 - Job timing logs: render_ms, ai_ms, storage_ms, total_ms.
 
@@ -22,7 +23,7 @@
 
 - Incident: Browser Rendering degraded
   - Serve cached reports, prompt retry.
-- Incident: OpenAI failures
+- Incident: OpenRouter failures
   - Switch model or degrade gracefully.
 - Incident: D1 downtime
   - Serve cached reports, retry background writes.

@@ -28,11 +28,11 @@
 ## UX Requirements
 
 - Form validation (URL required).
+- Turnstile challenge required before submit.
 - Loading states, progress steps, and error states.
 - Progress steps: 10% connect, 40% screenshot, 70% AI analysis, 90% finalizing.
 - Show score immediately once available, then stream fixes.
 - Show screenshot and report in two-column layout.
-- CTA for upgrade if score below threshold.
 
 ## Accessibility
 

@@ -118,7 +118,7 @@ export function parseReportData(input: unknown): ReportData {
 
   const partial = partialReportSchema.safeParse(input);
   if (!partial.success) {
-    throw new Error("OpenAI response failed schema validation");
+    throw new Error("AI response failed schema validation");
   }
 
   const metrics = normalizeMetrics(partial.data.metrics);

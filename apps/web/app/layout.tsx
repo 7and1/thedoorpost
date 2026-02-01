@@ -3,6 +3,7 @@ import { Space_Grotesk, Newsreader } from "next/font/google";
 import type { Metadata } from "next";
 import Script from "next/script";
 import ErrorBoundary from "../components/ErrorBoundary";
+import CookieConsent from "../components/CookieConsent";
 
 const display = Space_Grotesk({
   subsets: ["latin"],
@@ -23,15 +24,43 @@ export const metadata: Metadata = {
     description: "Score your hero section and get actionable CRO fixes.",
     url: "https://thedoorpost.com",
     siteName: "TheDoorpost",
-    images: [{ url: "/og.png", width: 1200, height: 630 }],
+    images: [{ url: "/og.svg", width: 1200, height: 630 }],
     type: "website",
+    locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
     title: "TheDoorpost — Above-the-Fold Analyzer",
     description: "Score your hero section and get actionable CRO fixes.",
-    images: ["/og.png"],
+    images: ["/og.svg"],
+    site: "@thedoorpost",
+    creator: "@thedoorpost",
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  verification: {
+    google: "google-site-verification-code",
+  },
+  authors: [{ name: "TheDoorpost Team", url: "https://thedoorpost.com/about" }],
+  keywords: [
+    "above the fold analyzer",
+    "landing page CRO",
+    "hero section analysis",
+    "conversion rate optimization",
+    "landing page audit",
+    "CRO tool",
+    "landing page critique",
+    "homepage optimization",
+  ],
 };
 
 export default function RootLayout({
@@ -81,6 +110,27 @@ export default function RootLayout({
           availability: "https://schema.org/InStock",
         },
       },
+      {
+        "@type": "Person",
+        "@id": "https://thedoorpost.com/#author",
+        name: "TheDoorpost Team",
+        jobTitle: "CRO Specialists",
+        description:
+          "Conversion rate optimization experts with 10+ years of experience analyzing landing pages for startups and Fortune 500 companies.",
+        url: "https://thedoorpost.com/about",
+        worksFor: {
+          "@type": "Organization",
+          name: "TheDoorpost",
+        },
+        knowsAbout: [
+          "Conversion Rate Optimization",
+          "Landing Page Design",
+          "A/B Testing",
+          "User Experience",
+          "Above-the-Fold Analysis",
+          "Hero Section Optimization",
+        ],
+      },
     ],
   };
 
@@ -94,6 +144,7 @@ export default function RootLayout({
       </head>
       <body>
         <ErrorBoundary>{children}</ErrorBoundary>
+        <CookieConsent />
         {/* Cloudflare Web Analytics
           Token: Set NEXT_PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN in .env
           Get token: https://dash.cloudflare.com/[account-id]/analytics/web
